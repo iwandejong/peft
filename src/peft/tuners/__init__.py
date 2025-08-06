@@ -43,6 +43,7 @@ from .prefix_tuning import PrefixEncoder, PrefixTuningConfig
 from .prompt_tuning import PromptEmbedding, PromptTuningConfig, PromptTuningInit
 from .randlora import RandLoraConfig, RandLoraModel
 from .shira import ShiraConfig, ShiraModel
+from .spikelora import SpikeLoraConfig, SpikeLoraModel
 from .trainable_tokens import TrainableTokensConfig, TrainableTokensModel
 from .vblora import VBLoRAConfig, VBLoRAModel
 from .vera import VeraConfig, VeraModel
@@ -101,6 +102,8 @@ __all__ = [
     "RandLoraModel",
     "ShiraConfig",
     "ShiraModel",
+    "SpikeLoraConfig",
+    "SpikeLoraModel",
     "TrainableTokensConfig",
     "TrainableTokensModel",
     "VBLoRAConfig",
