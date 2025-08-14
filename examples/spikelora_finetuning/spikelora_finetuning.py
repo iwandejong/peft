@@ -19,7 +19,7 @@ from typing import Optional
 import torch
 import transformers
 from datasets import load_dataset
-from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig, set_seed
+from transformers import AutoModelForCausalLM, AutoTokenizer, set_seed
 
 from peft import (
     SpikeLoraConfig,
