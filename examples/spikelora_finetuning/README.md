@@ -40,7 +40,7 @@ You can load and use the model as any other 🤗 PEFT model
 from peft import PeftModel
 model = AutoModelForCausalLM.from_pretrained("facebook/opt-350m")
 tokenizer = AutoTokenizer.from_pretrained("facebook/opt-350m")
-olora_model = PeftModel.from_pretrained(model, "spikelora-opt-350m")
+spikelora_model = PeftModel.from_pretrained(model, "spikelora-opt-350m")
 ```
 
 ## Citation

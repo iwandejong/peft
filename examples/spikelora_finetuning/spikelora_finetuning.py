@@ -92,7 +92,6 @@ def train(
         lora_alpha=lora_alpha,
         target_modules=lora_target_modules,
         lora_dropout=lora_dropout,
-        bias="none",
         task_type="CAUSAL_LM",
         v_threshold=v_threshold,
     )
@@ -123,6 +122,10 @@ def train(
             save_total_limit=3,
             load_best_model_at_end=True,
             ddp_find_unused_parameters=False if world_size > 1 else None,
+            
+            # wandb
+            report_to="wandb" if os.environ.get("WANDB_DISABLED", "false").lower() != "true" else "none",
+            run_name=f"spikelora-{base_model.split('/')[-1]}",
         ),
         data_collator=transformers.DataCollatorForSeq2Seq(
             tokenizer, pad_to_multiple_of=8, return_tensors="pt", padding=True
@@ -146,7 +149,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--base_model", type=str, default="path/to/model")
     parser.add_argument("--data_path", type=str, default="yahma/alpaca-cleaned")
-    parser.add_argument("--output_dir", type=str, default="olora")
+    parser.add_argument("--output_dir", type=str, default="spikelora")
     parser.add_argument("--batch_size", type=int, default=16)
     parser.add_argument("--num_epochs", type=int, default=1)
     parser.add_argument("--learning_rate", type=float, default=3e-4)
@@ -160,7 +163,6 @@ if __name__ == "__main__":
     parser.add_argument("--lora_dropout", type=float, default=0.05)
     parser.add_argument("--lora_target_modules", type=str, default=None)
     parser.add_argument("--torch_dtype", type=str, default="float16")
-    parser.add_argument("--init_lora_weights", type=str, default=True)
     parser.add_argument("--seed", type=int, default=None)
     parser.add_argument("--v_threshold", type=float, default=0.5)
 
@@ -183,7 +185,6 @@ if __name__ == "__main__":
         lora_dropout=args.lora_dropout,
         lora_target_modules=args.lora_target_modules,
         torch_dtype=args.torch_dtype,
-        init_lora_weights=args.init_lora_weights,
         seed=args.seed,
         v_threshold=args.v_threshold,
     )

@@ -38,6 +38,9 @@ class SpikeLoraLayer(nn.Module):
     ):
         super().__init__()
 
+        if base_layer.bias is not None:
+            raise ValueError("SpikeLoRA does not support bias in the base layer. Please set bias=None in the base layer.")
+
         self.base_layer = base_layer
         self.r = r
         self.lora_alpha = lora_alpha
