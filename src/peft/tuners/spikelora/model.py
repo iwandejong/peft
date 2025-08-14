@@ -1,17 +1,31 @@
-import torch
 import torch.nn as nn
-from typing import List, Optional
 
 from .config import SpikeLoraConfig
 from .layer import SpikeLoraLayer, replace_linear_with_lora
 
-
 class SpikeLoraModel(nn.Module):
     """
-    Simple wrapper that adds LoRA to a pretrained model.
+    SpikeLoRA model that applies LoRA to specified modules in a base model.
+    Args:
+        model: Pretrained model to apply LoRA to.
+        config: Configuration for SpikeLoRA.
+    Attributes:
+        base_model: The original model with LoRA layers added.
+        config: Configuration for SpikeLoRA.
+        lora_layers: List of LoRA layers added to the model.
+    Methods:
+        forward: Forward pass through the model.
+        merge_and_unload: Merge LoRA weights into the base model for inference.
+        get_trainable_params: Get number of trainable parameters.
+        print_trainable_params: Print number of trainable parameters.
     """
     
     def __init__(self, model: nn.Module, config: SpikeLoraConfig):
+        """
+        Args:
+            model: Pretrained model to apply LoRA to.
+            config: Configuration for SpikeLoRA.
+        """
         super().__init__()
         
         self.base_model = model
@@ -57,13 +71,22 @@ class SpikeLoraModel(nn.Module):
                 param.requires_grad = True
     
     def forward(self, *args, **kwargs):
-        """Forward pass through the model."""
+        """
+        Forward pass through the model.
+        Args:
+            *args: Positional arguments for the base model.
+            **kwargs: Keyword arguments for the base model.
+        Returns:
+            Output of the base model with SpikeLoRA applied.
+        """
         return self.base_model(*args, **kwargs)
     
     def merge_and_unload(self):
         """
         Merge LoRA weights and return the base model.
-        Useful for inference or saving merged model.
+        This is useful for inference after training.
+        Returns:
+            nn.Module: The base model with LoRA weights merged.
         """
         # Merge all LoRA layers
         for lora_layer in self.lora_layers:
@@ -73,13 +96,17 @@ class SpikeLoraModel(nn.Module):
         return self.base_model
     
     def get_trainable_params(self):
-        """Get number of trainable parameters."""
+        """
+        Get number of trainable parameters.
+        Returns:
+            Tuple of (trainable parameters, total parameters).
+        """
         trainable = sum(p.numel() for p in self.parameters() if p.requires_grad)
         total = sum(p.numel() for p in self.parameters())
         return trainable, total
     
     def print_trainable_params(self):
-        """Print trainable parameter statistics."""
+        """Print number of trainable parameters."""
         trainable, total = self.get_trainable_params()
         print(f"Trainable params: {trainable:,} || "
               f"Total params: {total:,} || "
@@ -88,13 +115,11 @@ class SpikeLoraModel(nn.Module):
 
 def get_peft_model(model: nn.Module, peft_config: SpikeLoraConfig):
     """
-    Simple function to wrap a model with LoRA.
-    
+    Get a PEFT model with SpikeLoRA configuration.
     Args:
-        model: Base model to add LoRA to
-        peft_config: LoRA configuration
-    
+        model: Pretrained model to apply LoRA to.
+        peft_config: Configuration for SpikeLoRA.
     Returns:
-        LoRA-enabled model
+        SpikeLoraModel: Model with LoRA layers added.
     """
     return SpikeLoraModel(model, peft_config)
