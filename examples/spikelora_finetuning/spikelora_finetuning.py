@@ -34,7 +34,6 @@ def train(
     learning_rate: float = 3e-4,
     cutoff_len: int = 256,
     val_set_size: int = 16,
-    quantize: bool = False,
     eval_step: int = 100,
     save_step: int = 100,
     device_map: str = "auto",
@@ -56,13 +55,6 @@ def train(
     if seed is not None:
         set_seed(seed)
     model_kwargs = {"torch_dtype": getattr(torch, torch_dtype), "device_map": device_map}
-    if quantize:
-        model_kwargs["quantization_config"] = BitsAndBytesConfig(
-            load_in_4bit=True,
-            bnb_4bit_compute_dtype=torch.bfloat16,
-            bnb_4bit_use_double_quant=True,
-            bnb_4bit_quant_type="nf4",
-        )
     model = AutoModelForCausalLM.from_pretrained(base_model, **model_kwargs)
 
     tokenizer = AutoTokenizer.from_pretrained(base_model, trust_remote_code=True)
@@ -160,7 +152,6 @@ if __name__ == "__main__":
     parser.add_argument("--learning_rate", type=float, default=3e-4)
     parser.add_argument("--cutoff_len", type=int, default=256)
     parser.add_argument("--val_set_size", type=int, default=16)
-    parser.add_argument("--quantize", action="store_true")
     parser.add_argument("--eval_step", type=int, default=100)
     parser.add_argument("--save_step", type=int, default=100)
     parser.add_argument("--device_map", type=str, default="auto")
@@ -184,7 +175,6 @@ if __name__ == "__main__":
         learning_rate=args.learning_rate,
         cutoff_len=args.cutoff_len,
         val_set_size=args.val_set_size,
-        quantize=args.quantize,
         eval_step=args.eval_step,
         save_step=args.save_step,
         device_map=args.device_map,
