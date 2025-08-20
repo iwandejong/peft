@@ -71,7 +71,7 @@ def train_and_eval(task: str, params: dict, seed: int = 42):
     val_ds = dataset[val_split]
 
     # Tokenizer
-    tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME, cache_dir="./cache", trust_remote_code=True)
+    tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME, cache_dir="./cache", trust_remote_code=True, use_fast=False)
 
     def preprocess(example):
         if task in ["cola", "sst2"]:
