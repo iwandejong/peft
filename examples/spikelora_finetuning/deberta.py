@@ -170,26 +170,26 @@ def train_and_eval(task: str, params: dict, seed: int = 42):
 
 # --- Hyperparameter Search with Pyhopper ---
 def run_search(task: str):
-    search_space = {
-        "learning_rate": ph.float(1e-5, 5e-4, log=True),
-        "batch_size": ph.choice([8, 16, 32]),
-        "num_epochs": ph.int(2, 6),
-        "lora_r": ph.int(4, 64),
-        "lora_alpha": ph.int(8, 64),
-        "lora_dropout": ph.float(0.0, 0.3),
-        "v_threshold": ph.float(0.1, 1.0),
-    }
+    search = ph.Search(
+      learning_rate = ph.float(1e-5, 5e-4, log=True),
+      batch_size = ph.choice([8, 16, 32]),
+      num_epochs = ph.int(2, 6),
+      lora_r = ph.int(4, 64),
+      lora_alpha = ph.int(8, 64),
+      lora_dropout = ph.float(0.0, 0.3),
+      v_threshold = ph.float(0.1, 1.0),
+    )
 
     def objective(params):
         score = train_and_eval(task, params)
         return score  # maximize
 
-    opt = ph.optimizers.SimulatedAnnealing(objective, search_space)
-
-    # run for budgeted time
-    opt.run(timeout=MAX_HOURS[task] * 3600, max_evals=100)
-    print("Best params:", opt.best_params)
-    print("Best score:", opt.best_value)
+    best_params = search.run(
+        objective,
+        direction="maximize",
+        runtime=MAX_HOURS[task] * 3600,
+    )
+    print(f"Best params for {task}: {best_params}")
 
 if __name__ == "__main__":
     import argparse
