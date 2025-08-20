@@ -171,13 +171,13 @@ def train_and_eval(task: str, params: dict, seed: int = 42):
 # --- Hyperparameter Search with Pyhopper ---
 def run_search(task: str):
     search_space = {
-        "learning_rate": ph.Float(1e-5, 5e-4, log=True),
+        "learning_rate": ph.float(1e-5, 5e-4, log=True),
         "batch_size": ph.Choice([8, 16, 32]),
-        "num_epochs": ph.Int(2, 6),
-        "lora_r": ph.Int(4, 64),
-        "lora_alpha": ph.Int(8, 64),
-        "lora_dropout": ph.Float(0.0, 0.3),
-        "v_threshold": ph.Float(0.1, 1.0),
+        "num_epochs": ph.int(2, 6),
+        "lora_r": ph.int(4, 64),
+        "lora_alpha": ph.int(8, 64),
+        "lora_dropout": ph.float(0.0, 0.3),
+        "v_threshold": ph.float(0.1, 1.0),
     }
 
     def objective(params):
