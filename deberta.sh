@@ -18,27 +18,13 @@ echo Available GPU devices: $CUDA_VISIBLE_DEVICES
 echo
 
 module purge
-
-# if [[ $HOSTNAME == gpu200* ]]; then
-#   module load chpc/cuda/11.6/PCIe/11.6
-# elif [[ $HOSTNAME == gpu400* ]]; then
-#   module load chpc/cuda/11.6/SXM2/11.6
-# else
-#   echo "Unknown GPU node type: $HOSTNAME"
-#   exit 1
-# fi
-
 module load chpc/python/anaconda/3-2021.11
 
 # Activate venv
 source /mnt/lustre/users/idejong/venv/bin/activate
-export LD_LIBRARY_PATH=/mnt/lustre/users/idejong/peft/venv/lib:$LD_LIBRARY_PATH
 
 # Check CUDA version and availability
 python3 -c "import torch; print(torch.version.cuda, torch.cuda.is_available())"
-
-# Check xxhash
-python3 -c "import xxhash; print(xxhash.xxh64('test').hexdigest())"
 
 TASK=${TASK:-sst2}
  
