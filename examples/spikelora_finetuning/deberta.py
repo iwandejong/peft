@@ -172,7 +172,7 @@ def train_and_eval(task: str, params: dict, seed: int = 42):
 def run_search(task: str):
     search_space = {
         "learning_rate": ph.float(1e-5, 5e-4, log=True),
-        "batch_size": ph.Choice([8, 16, 32]),
+        "batch_size": ph.choice([8, 16, 32]),
         "num_epochs": ph.int(2, 6),
         "lora_r": ph.int(4, 64),
         "lora_alpha": ph.int(8, 64),
