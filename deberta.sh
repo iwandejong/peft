@@ -3,7 +3,7 @@
 #PBS -q gpu_1
 #PBS -l select=1:ncpus=10:ngpus=1
 #PBS -P CSCI1166
-#PBS -l walltime=00:05:00
+#PBS -l walltime=12:00:00
 #PBS -m abe
 #PBS -M u22498037@tuks.co.za
  
@@ -32,7 +32,9 @@ module load chpc/python/anaconda/3-2021.11
 
 # Check CUDA version and availability
 python3 -c "import torch; print(torch.version.cuda, torch.cuda.is_available())"
+
+TASK=${TASK:-sst2}
  
 # run 
 rm spikelora_output.log spikelora_error.log
-python3 examples/spikelora_finetuning/deberta.py --task="sst2" > spikelora_output.log 2> spikelora_error.log
+python3 examples/spikelora_finetuning/deberta.py --task="$TASK" > spikelora_output.log 2> spikelora_error.log

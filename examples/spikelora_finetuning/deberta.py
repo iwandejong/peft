@@ -1,6 +1,5 @@
 import time
 import torch
-import evaluate
 from datasets import load_from_disk
 from transformers import (
     AutoTokenizer,
@@ -133,8 +132,8 @@ def run_search(task: str):
 
     opt = ph.optimizers.SimulatedAnnealing(objective, search_space)
 
-    # Run for 12h
-    opt.run(timeout=60 * 60 * 12)
+    # Run for 11:45h
+    opt.run(timeout=11 * 3600 + 45 * 60)
     print("Best params:", opt.best_params)
     print("Best score:", opt.best_value)
 
