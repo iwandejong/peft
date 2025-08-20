@@ -1,9 +1,7 @@
-import os
 import time
 import torch
-import transformers
 import evaluate
-from datasets import load_dataset, load_from_disk
+from datasets import load_from_disk
 from transformers import (
     AutoTokenizer,
     AutoModelForSequenceClassification,
@@ -14,13 +12,36 @@ from transformers import (
 from peft import SpikeLoraConfig, get_peft_model
 import pyhopper as ph
 
+# --- Utility functions ---
+from sklearn.metrics import accuracy_score, f1_score
+from scipy.stats import pearsonr, spearmanr
+
+def get_metric_fn(task):
+    if task in ["cola"]:  # Matthew's correlation
+        from sklearn.metrics import matthews_corrcoef
+        return lambda preds, labels: {"matthews_corrcoef": matthews_corrcoef(labels, preds)}
+    elif task in ["sst2", "mnli", "qnli", "rte", "wnli"]:
+        return lambda preds, labels: {"accuracy": accuracy_score(labels, preds)}
+    elif task in ["mrpc", "qqp"]:
+        return lambda preds, labels: {
+            "accuracy": accuracy_score(labels, preds),
+            "f1": f1_score(labels, preds)
+        }
+    elif task == "stsb":
+        return lambda preds, labels: {
+            "pearson": pearsonr(labels, preds)[0],
+            "spearman": spearmanr(labels, preds)[0]
+        }
+    else:
+        raise ValueError(f"Unsupported task {task}")
+
 # --- Train/Eval function ---
 def train_and_eval(task: str, params: dict, seed: int = 42):
     set_seed(seed)
 
     # Load dataset & metric
     dataset = load_from_disk(f"./glue_data/{task}")
-    metric = evaluate.load(f".glue_metrics/{task}")
+    metric_fn = get_metric_fn(task)
 
     # Model + Tokenizer
     tokenizer = AutoTokenizer.from_pretrained("./deberta_v3")
@@ -76,8 +97,8 @@ def train_and_eval(task: str, params: dict, seed: int = 42):
 
     def compute_metrics(eval_pred):
         logits, labels = eval_pred
-        preds = logits.argmax(axis=-1)
-        return metric.compute(predictions=preds, references=labels)
+        preds = logits.argmax(axis=-1) if logits.ndim > 1 else logits
+        return metric_fn(preds, labels)
 
     trainer = Trainer(
         model=model,
