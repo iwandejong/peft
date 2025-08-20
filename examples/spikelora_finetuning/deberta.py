@@ -3,7 +3,7 @@ import time
 import torch
 import transformers
 import evaluate
-from datasets import load_dataset
+from datasets import load_dataset, load_from_disk
 from transformers import (
     AutoTokenizer,
     AutoModelForSequenceClassification,
@@ -19,12 +19,11 @@ def train_and_eval(task: str, params: dict, seed: int = 42):
     set_seed(seed)
 
     # Load dataset & metric
-    dataset = load_dataset("glue", task)
-    metric = evaluate.load("glue", task)
+    dataset = load_from_disk(f"./glue_data/{task}")
+    metric = evaluate.load(f".glue_metrics/{task}")
 
     # Model + Tokenizer
-    model_name = "microsoft/deberta-v3-base"
-    tokenizer = AutoTokenizer.from_pretrained(model_name)
+    tokenizer = AutoTokenizer.from_pretrained("./deberta_v3")
 
     def preprocess(example):
         if task in ["cola", "sst2"]:
@@ -43,7 +42,7 @@ def train_and_eval(task: str, params: dict, seed: int = 42):
 
     # Load model
     model = AutoModelForSequenceClassification.from_pretrained(
-        model_name,
+        "./deberta_v3",
         num_labels=num_labels,
         torch_dtype=torch.float16,
         device_map="auto",
