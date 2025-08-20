@@ -135,7 +135,7 @@ def train_and_eval(task: str, params: dict, seed: int = 42):
         report_to="wandb",
         logging_steps=100,
         run_name=f"spikelora_finetuning_{task}_{int(time.time())}",
-        fp16=True,               # use mixed precision
+        fp16=True,
         remove_unused_columns=False,
     )
 
