@@ -8,6 +8,7 @@ from transformers import (
     TrainingArguments,
     Trainer,
     set_seed,
+    DebertaV2Tokenizer
 )
 from peft import SpikeLoraConfig, get_peft_model
 import pyhopper as ph
@@ -71,7 +72,7 @@ def train_and_eval(task: str, params: dict, seed: int = 42):
     val_ds = dataset[val_split]
 
     # Tokenizer
-    tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME, cache_dir="./cache", trust_remote_code=True, use_fast=False)
+    tokenizer = DebertaV2Tokenizer.from_pretrained(MODEL_NAME)
 
     def preprocess(example):
         if task in ["cola", "sst2"]:
