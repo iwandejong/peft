@@ -10,6 +10,7 @@
 cd /mnt/lustre/users/idejong/peft
 
 export WANDB_API_KEY="ed0a79eefd77fefe9ff353ac45b85404dc20c756"
+export LD_LIBRARY_PATH=/mnt/lustre/users/idejong/peft/venv/lib:$LD_LIBRARY_PATH
  
 echo
 echo `date`: executing CUDA job on host ${HOSTNAME}
