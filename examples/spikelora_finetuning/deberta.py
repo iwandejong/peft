@@ -130,7 +130,6 @@ def train_and_eval(task: str, params: dict, seed: int = 42):
         per_device_eval_batch_size=params["batch_size"],
         learning_rate=params["learning_rate"],
         num_train_epochs=params["num_epochs"],
-        evaluation_strategy="epoch",
         save_strategy="no",
         logging_dir="logs",
         report_to="wandb",
