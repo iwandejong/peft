@@ -61,12 +61,24 @@ def train_and_eval(task: str, params: dict, seed: int = 42):
     num_labels = dataset["train"].features["label"].num_classes
 
     # Load model
-    model = AutoModelForSequenceClassification.from_pretrained(
-        "./deberta_v3",
-        num_labels=num_labels,
-        torch_dtype=torch.float16,
-        device_map="auto",
-    )
+    if task == "stsb":
+        num_labels = 1
+        model = AutoModelForSequenceClassification.from_pretrained(
+            "./deberta_v3",
+            num_labels=num_labels,
+            problem_type="regression",
+            torch_dtype=torch.float16,
+            device_map="auto",
+        )
+    else:
+        num_labels = dataset["train"].features["label"].num_classes
+        model = AutoModelForSequenceClassification.from_pretrained(
+            "./deberta_v3",
+            num_labels=num_labels,
+            torch_dtype=torch.float16,
+            device_map="auto",
+        )
+
 
     # Apply SpikeLoRA
     config = SpikeLoraConfig(
@@ -110,7 +122,7 @@ def train_and_eval(task: str, params: dict, seed: int = 42):
 
     trainer.train()
     metrics = trainer.evaluate()
-    main_score = list(metrics.values())[1]  # skip "eval_loss"
+    main_score = next(v for k, v in metrics.items() if not k.endswith("loss"))
     return main_score
 
 
