@@ -35,4 +35,4 @@ python3 -c "import torch; print(torch.version.cuda, torch.cuda.is_available())"
  
 # run 
 rm spikelora_output.log spikelora_error.log
-python3 examples/spikelora_finetuning/deberta.py > spikelora_output.log 2> spikelora_error.log
+python3 examples/spikelora_finetuning/deberta.py --task="sst2" > spikelora_output.log 2> spikelora_error.log
