@@ -37,6 +37,9 @@ export LD_LIBRARY_PATH=/mnt/lustre/users/idejong/peft/venv/lib:$LD_LIBRARY_PATH
 # Check CUDA version and availability
 python3 -c "import torch; print(torch.version.cuda, torch.cuda.is_available())"
 
+# Check xxhash
+python3 -c "import xxhash; print(xxhash.xxh64('test').hexdigest())"
+
 TASK=${TASK:-sst2}
  
 # run 
