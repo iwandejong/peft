@@ -24,7 +24,7 @@ module load chpc/python/anaconda/3-2021.11
 export LD_LIBRARY_PATH="/apps/chpc/chem/anaconda3-2021.11/pkgs/xxhash-0.8.0-h7f98852_3/lib:$LD_LIBRARY_PATH"
 
 # Activate venv
-source /mnt/lustre/users/idejong/venv/bin/activate
+source /mnt/lustre/users/idejong/peft/venv/bin/activate
 
 # Check CUDA version and availability
 python3 -c "import torch; print(torch.version.cuda, torch.cuda.is_available())"

@@ -1,0 +1,30 @@
+RTX 2000 Ada: $0.24/hr
+
+21 experiments * 200 minutes each = 4200 minutes total
+4200 minutes / 60 = 70 hours total per run 
+70 hours * $0.24/hr = $16.80 total cost for 21 experiments
+Runs left: 3
+Total cost for 3 runs = 3 * $16.80 = $50.40
+
+Pyhopper Search
+MAX_HOURS = {
+  "rte": 4,
+  "wnli": 4,
+  "stsb": 4,
+  "mrpc": 4,
+  "sst2": 12,
+  "qnli": 12,
+  "qqp": 24,
+  "mnli": 24,
+}
+Total hours for pyhopper search = 4 + 4 + 4 + 4 + 12 + 12 + 24 + 24 = 92 hours
+Total cost for pyhopper search = 92 hours * $0.24/hr = $22.08
+
+5 runs on best pyhopper config for GLUE benchmark
+5 runs * $16.80 per run = $84.00
+
+Total cost for GLUE benchmark experiments:
+Total cost = $50.40 (remaining runs) + $22.08 (pyhopper search) + $84.00 (best config runs)
+Total cost = $50.40 + $22.08 + $84.00 = $156.48
+
+
