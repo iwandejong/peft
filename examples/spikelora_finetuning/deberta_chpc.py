@@ -190,6 +190,8 @@ def train_and_eval(task: str, params: dict, seed: int = 42):
         return float(main_score) if main_score is not None else -999.0
     except Exception as e:
         print(f"[train_and_eval] failed for params={params}: {e}")
+        import traceback
+        traceback.print_exc()
         return -999.0
 
 # --- Hyperparameter Search with Pyhopper ---
