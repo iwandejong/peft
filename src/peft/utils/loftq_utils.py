@@ -22,13 +22,7 @@ import os
 from typing import Callable, Optional, Union
 
 import torch
-# from accelerate.utils.memory import clear_device_cache
-try:
-    from accelerate.utils.memory import clear_device_cache
-except ImportError:
-    # fallback for older accelerate versions
-    def clear_device_cache():
-        pass
+from accelerate.utils.memory import clear_device_cache
 from huggingface_hub import snapshot_download
 from huggingface_hub.errors import HFValidationError, LocalEntryNotFoundError
 from safetensors import SafetensorError, safe_open
