@@ -1,5 +1,5 @@
 #!/bin/bash
-#PBS -N spikelora-pyhopper
+#PBS -N spikelora-deberta
 #PBS -q gpu_1
 #PBS -l select=1:ncpus=10:ngpus=1
 #PBS -P CSCI1166
