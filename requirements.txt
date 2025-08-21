@@ -16,3 +16,4 @@ setuptools
 spikingjelly
 datasets
 pyhopper
+scikit-learn
