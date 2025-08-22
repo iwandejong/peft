@@ -209,7 +209,7 @@ def run(seed: int = 42):
         "lora_alpha": 45,
         "lora_dropout": 0.15,
         "v_threshold": 0.75,
-        "num_epochs": 5,
+        "num_epochs": 20, # should be 5, but let's stress test
     }
     print(f"Running task {task} with params: {params}")
     score = train_and_eval(task, params, seed)
