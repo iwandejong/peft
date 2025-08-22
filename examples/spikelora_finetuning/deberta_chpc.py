@@ -219,6 +219,7 @@ def run_search(task: str):
         objective,
         direction="maximize",
         runtime=MAX_HOURS[task] * 3600 - 600,
+        n_jobs="per-gpu"
     )
     print(f"Best params for {task}: {best_params}")
 
