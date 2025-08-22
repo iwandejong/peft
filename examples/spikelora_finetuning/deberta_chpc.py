@@ -166,13 +166,23 @@ def train_and_eval(task: str, params: dict, seed: int = 42):
         remove_unused_columns=False,
     )
 
+    def safe_corr(x, y, corr_fn):
+        try:
+              r = corr_fn(x, y)[0]
+              if np.isnan(r):
+                  return 0.0  # fallback
+              return r
+        except Exception:
+            return 0.0
+
     def compute_metrics(eval_pred):
         logits, labels = eval_pred
         # regression
         if task == "stsb":
-            # logits may be shape (batch,1) or (batch,)
             preds = np.squeeze(logits)
-            return metric_fn(preds, labels)
+            pear = safe_corr(labels, preds, pearsonr)
+            spear = safe_corr(labels, preds, spearmanr)
+            return {"pearson": pear, "spearman": spear}
         # classification
         preds = np.argmax(logits, axis=-1)
         return metric_fn(preds, labels)
