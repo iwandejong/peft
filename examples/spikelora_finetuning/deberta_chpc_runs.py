@@ -200,17 +200,13 @@ def train_and_eval(task: str, params: dict, seed: int = 42):
         return -999.0
 
 # --- Run with param setup ---
-def run(seed: int = 42):
-    task = "cola"
-    params = {
-        "learning_rate": 5e-3,
-        "batch_size": 16,
-        "lora_r": 38,
-        "lora_alpha": 45,
-        "lora_dropout": 0.15,
-        "v_threshold": 0.75,
-        "num_epochs": 20, # should be 5, but let's stress test
-    }
+def run(task: str, seed: int = 42):
+    from best_params import BEST_PARAMS
+    if task not in BEST_PARAMS:
+        raise ValueError(f"No best params for task {task}")
+    params = BEST_PARAMS[task]
+    # change num_epochs to a big number - just run until max hours, doesn't have to finish
+    params["num_epochs"] = 100
     print(f"Running task {task} with params: {params}")
     score = train_and_eval(task, params, seed)
     print(f"Final score for task {task}: {score}")
@@ -218,6 +214,7 @@ def run(seed: int = 42):
 if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser()
+    parser.add_argument("--task", type=str, default="cola", help="GLUE task name")
     parser.add_argument("--seed", type=int, default=42, help="Random seed")
     args = parser.parse_args()
     run(args.task, args.seed)
