@@ -136,6 +136,7 @@ def train_and_eval(task: str, params: dict, seed: int = 42):
         num_labels=num_labels,
         problem_type="regression" if task == "stsb" else None,
         trust_remote_code=True,
+        ignore_mismatched_sizes=True,
     )
 
     # Apply SpikeLoRA
