@@ -3,7 +3,7 @@
 #PBS -q gpu_2
 #PBS -l select=1:ncpus=18:ngpus=2
 #PBS -P CSCI1166
-#PBS -l walltime=12:00:00
+#PBS -l walltime=11:50:00
 #PBS -m abe
 #PBS -M u22498037@tuks.co.za
  
