@@ -1,7 +1,7 @@
 #!/bin/bash
 #PBS -N spikelora-deberta
-#PBS -q gpu_2
-#PBS -l select=1:ncpus=9:ngpus=2
+#PBS -q gpu_4
+#PBS -l select=1:ncpus=9:ngpus=4
 #PBS -P CSCI1166
 #PBS -l walltime=12:00:00
 #PBS -m abe
