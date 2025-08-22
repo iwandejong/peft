@@ -1,0 +1,4 @@
+Best params for mrpc: {'learning_rate': 0.0005, 'batch_size': 8, 'num_epochs': 5, 'lora_r': 21, 'lora_alpha': 38, 'lora_dropout': 0.09446732919790111, 'v_threshold': 0.7270969562789545}
+Best params for wnli: {'learning_rate': 0.0005, 'batch_size': 8, 'num_epochs': 4, 'lora_r': 64, 'lora_alpha': 36, 'lora_dropout': 0.09753718911258191, 'v_threshold': 0.1}
+Best params for rte: {'learning_rate': 0.00046078589483983576, 'batch_size': 8, 'num_epochs': 5, 'lora_r': 64, 'lora_alpha': 57, 'lora_dropout': 0.3, 'v_threshold': 0.24536888196771087}
+Best params for cola: {'learning_rate': 0.005, 'batch_size': 16, 'num_epochs': 5, 'lora_r': 38, 'lora_alpha': 45, 'lora_dropout': 0.15, 'v_threshold': 0.75}
