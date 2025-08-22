@@ -27,9 +27,9 @@ source /mnt/lustre/users/idejong/peft/venv/bin/activate
 # Check CUDA version and availability
 python3 -c "import torch; print(torch.version.cuda, torch.cuda.is_available())"
 
-SEED=${SEED:-42}
+SEED=${SEED:-0}
 TASK=${TASK:-cola}
 
 # run 
 rm -f spikelora_output.log spikelora_error.log
-python3 examples/spikelora_finetuning/deberta_chpc.py --seed "$SEED" --task "$TASK" > ${TASK}_${SEED}_output.log 2> ${TASK}_${SEED}_error.log
+python3 examples/spikelora_finetuning/deberta_chpc_runs.py --seed "$SEED" --task "$TASK" > ${TASK}_${SEED}_output.log 2> ${TASK}_${SEED}_error.log
