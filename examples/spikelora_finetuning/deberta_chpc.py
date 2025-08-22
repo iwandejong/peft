@@ -219,7 +219,7 @@ def run_search(task: str):
     best_params = search.run(
         objective,
         direction="maximize",
-        runtime=MAX_HOURS[task] * 3600 - 600,
+        runtime=(MAX_HOURS[task] * 3600 - 600) / 4 if task in ["qqp", "mnli"] else MAX_HOURS[task] * 3600 - 600,
         n_jobs="per-gpu"
     )
     print(f"Best params for {task}: {best_params}")
