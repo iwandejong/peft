@@ -218,7 +218,7 @@ def run_search(task: str):
     best_params = search.run(
         objective,
         direction="maximize",
-        runtime=MAX_HOURS[task] * 3600,
+        runtime=MAX_HOURS[task] * 3600 - 600,
     )
     print(f"Best params for {task}: {best_params}")
 
