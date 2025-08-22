@@ -4,4 +4,6 @@ BEST_PARAMS = {
   "rte": {'learning_rate': 0.00046078589483983576, 'batch_size': 8, 'num_epochs': 5, 'lora_r': 64, 'lora_alpha': 57, 'lora_dropout': 0.3, 'v_threshold': 0.24536888196771087},
   "cola": {'learning_rate': 0.005, 'batch_size': 16, 'num_epochs': 5, 'lora_r': 38, 'lora_alpha': 45, 'lora_dropout': 0.15, 'v_threshold': 0.75},
   "sst2": {'learning_rate': 0.000224583317474498, 'batch_size': 16, 'num_epochs': 4, 'lora_r': 39, 'lora_alpha': 15, 'lora_dropout': 0.1838480442440153, 'v_threshold': 0.12836822579856336},
+  "qnli": {'learning_rate': 0.00025225110938366743, 'batch_size': 32, 'num_epochs': 4, 'lora_r': 58, 'lora_alpha': 54, 'lora_dropout': 0.2693754343489524, 'v_threshold': 0.21824550719994545},
+  "mnli": {'learning_rate': 7.071067811865475e-05, 'batch_size': 8, 'num_epochs': 4, 'lora_r': 34, 'lora_alpha': 36, 'lora_dropout': 0.15, 'v_threshold': 0.55}
 }
