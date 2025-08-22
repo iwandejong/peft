@@ -80,6 +80,19 @@ def pick_main_score(metrics: dict):
             return v
     return None
 
+# Task → dataset field names
+TASK_TO_KEYS = {
+    "cola": ("sentence", None),
+    "sst2": ("sentence", None),
+    "mrpc": ("sentence1", "sentence2"),
+    "qqp": ("question1", "question2"),
+    "stsb": ("sentence1", "sentence2"),
+    "mnli": ("premise", "hypothesis"),
+    "qnli": ("question", "sentence"),
+    "rte": ("sentence1", "sentence2"),
+    "wnli": ("sentence1", "sentence2"),
+}
+
 # --- Train/Eval function ---
 def train_and_eval(task: str, params: dict, seed: int = 42):
     set_seed(seed)
@@ -96,18 +109,10 @@ def train_and_eval(task: str, params: dict, seed: int = 42):
     val_ds = dataset[val_split]
 
     def preprocess(example):
-        if task in ["cola", "sst2"]:
-            return tokenizer(example["sentence"], truncation=True, padding="max_length", max_length=128)
-        elif task in ["mrpc", "qqp"]:
-            return tokenizer(example["sentence1"], example["sentence2"], truncation=True, padding="max_length", max_length=128)
-        elif task in ["mnli", "qnli", "rte", "wnli"]:
-            # MNLI uses 'premise'/'hypothesis'
-            return tokenizer(example["premise"], example["hypothesis"], truncation=True, padding="max_length", max_length=128)
-        elif task == "stsb":
-            # STS-B has 'sentence1'/'sentence2'
-            return tokenizer(example["sentence1"], example["sentence2"], truncation=True, padding="max_length", max_length=128)
-        else:
-            raise ValueError(f"Task {task} not supported.")
+        key1, key2 = TASK_TO_KEYS[task]
+        if key2 is None:
+            return tokenizer(example[key1], truncation=True, padding="max_length", max_length=128)
+        return tokenizer(example[key1], example[key2], truncation=True, padding="max_length", max_length=128)
 
     train_enc = train_ds.map(preprocess, batched=True)
     val_enc = val_ds.map(preprocess, batched=True)
