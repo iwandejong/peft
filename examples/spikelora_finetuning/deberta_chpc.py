@@ -105,7 +105,7 @@ def train_and_eval(task: str, params: dict, seed: int = 42):
     tokenizer = DebertaV2Tokenizer.from_pretrained(f"{PATH}/deberta_v3")
 
     val_split = get_validation_split(dataset)
-    train_ds = dataset["train"]
+    train_ds = dataset["train"].select(range(100000))  # limit to 100000 samples
     val_ds = dataset[val_split]
 
     def preprocess(example):
@@ -215,7 +215,7 @@ def run_search(task: str):
     search = ph.Search(
       learning_rate = ph.float(1e-5, 5e-4, log=True),
       batch_size = ph.choice([8, 16, 32]),
-      num_epochs = ph.int(2, 6),
+      num_epochs = ph.int(2, 3),
       lora_r = ph.int(4, 64),
       lora_alpha = ph.int(8, 64),
       lora_dropout = ph.float(0.0, 0.3),
