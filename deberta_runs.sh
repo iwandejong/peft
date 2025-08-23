@@ -32,4 +32,4 @@ TASK=${TASK:-sst2}
  
 # run 
 rm -f ${TASK}_output.log ${TASK}_error.log
-python3 examples/spikelora_finetuning/deberta_chpc.py --task "$TASK" > ${TASK}_output.log 2> ${TASK}_error.log
+python3 examples/spikelora_finetuning/deberta_chpc_runs.py --task "$TASK" > ${TASK}_output.log 2> ${TASK}_error.log
