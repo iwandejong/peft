@@ -33,19 +33,6 @@ def get_metric_fn(task):
     else:
         raise ValueError(f"Unsupported task {task}")
 
-# max hours per task:
-MAX_HOURS = {
-  "cola": 4,
-  "rte": 4,
-  "wnli": 4,
-  "stsb": 4,
-  "mrpc": 4,
-  "sst2": 12,
-  "qnli": 12,
-  "qqp": 12,
-  "mnli": 12,
-}
-
 MODEL_NAME = "./deberta_v3"
 PATH = "/mnt/lustre/users/idejong/peft"
 
@@ -226,20 +213,27 @@ def train_and_eval(task: str, params: dict, seed: int = 42):
         return -999.0
 
 # --- Run with param setup ---
-def run(task: str, seed: int = 42):
+def run(task: str):
+    seeds = [0, 1, 2, 3, 4]
     from best_params import BEST_PARAMS
     if task not in BEST_PARAMS:
         raise ValueError(f"No best params for task {task}")
     params = BEST_PARAMS[task]
     # params["num_epochs"] *= 3  # run longer
     print(f"Running task {task} with params: {params}")
-    score = train_and_eval(task, params, seed)
-    print(f"Final score for task {task}: {score}")
+    scores = []
+    for seed in seeds:
+      print(f"Seed {seed}...")
+      score = train_and_eval(task, params, seed)
+      scores.append(score)
+      print(f"Score for seed {seed}: {score}")
+    score = np.mean(scores)
+    stdev = np.std(scores)
+    print(f"Final score for task {task}: {score} ± {stdev} (n={len(seeds)})")
 
 if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument("--task", type=str, default="cola", help="GLUE task name")
-    parser.add_argument("--seed", type=int, default=42, help="Random seed")
     args = parser.parse_args()
-    run(args.task, args.seed)
+    run(args.task)
