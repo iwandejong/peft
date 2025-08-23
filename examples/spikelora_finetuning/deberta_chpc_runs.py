@@ -178,6 +178,12 @@ def train_and_eval(task: str, params: dict, seed: int = 42):
               return r
         except Exception:
             return 0.0
+    
+    from sklearn.metrics import matthews_corrcoef
+    def safe_mcc(preds, labels):
+        mcc = matthews_corrcoef(labels, preds)
+        return 0.0 if np.isnan(mcc) else mcc
+
 
     def compute_metrics(eval_pred):
         logits, labels = eval_pred
@@ -187,6 +193,10 @@ def train_and_eval(task: str, params: dict, seed: int = 42):
             pear = safe_corr(labels, preds, pearsonr)
             spear = safe_corr(labels, preds, spearmanr)
             return {"pearson": pear, "spearman": spear}
+        if task == "cola": 
+            preds = np.argmax(logits, axis=-1)
+            mcc = safe_mcc(preds, labels)
+            return {"matthews_correlation": mcc}
         # classification
         preds = np.argmax(logits, axis=-1)
         return metric_fn(preds, labels)
