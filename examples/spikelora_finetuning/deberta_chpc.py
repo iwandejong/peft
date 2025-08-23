@@ -156,6 +156,7 @@ def train_and_eval(task: str, params: dict, seed: int = 42):
         r=8,
         lora_alpha=16,
         lora_dropout=0.05,
+        target_modules="all-linear",
         task_type="SEQ_CLS",
         v_threshold=params["v_threshold"],
     )
