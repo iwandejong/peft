@@ -38,7 +38,7 @@ def get_metric_fn(task):
 MAX_HOURS = {
   "cola": 4,
   "rte": 4,
-  "wnli": 4,
+  # "wnli": 4,
   "stsb": 4,
   "mrpc": 4,
   "sst2": 12,
@@ -50,7 +50,7 @@ MAX_HOURS = {
 NUM_EPOCHS = {
   "cola": 20,
   "rte": 50,
-  "wnli": 10,
+  # "wnli": 10,
   "stsb": 20,
   "mrpc": 20,
   "sst2": 10,
