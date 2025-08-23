@@ -95,7 +95,7 @@ class SpikeLoraLayer(nn.Module):
         drop_out = self.lora_dropout(lora_output)
         lora_output = self.lora_A_lif(drop_out) # SpikeLoRA activation
         # scale lora_output with drop_out magnitude (spikelora output is binary and thus loses magnitude info)
-        lora_output = lora_output * drop_out.abs().mean(dim=-1, keepdim=True)
+        lora_output = lora_output * drop_out.mean(dim=-1, keepdim=True)
         lora_output = self.lora_B(lora_output)
         lora_output = lora_output * self.scaling
 
