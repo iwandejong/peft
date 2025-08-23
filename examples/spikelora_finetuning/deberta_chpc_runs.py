@@ -157,24 +157,30 @@ def train_and_eval(task: str, params: dict, seed: int = 42):
         learning_rate=params["learning_rate"],
         num_train_epochs=params["num_epochs"],
         save_strategy="no",
-        logging_dir="logs",
+        logging_dir="./logs",
         report_to="wandb",
         logging_steps=100,
         run_name=f"spikelora_finetuning_{task}_{int(time.time())}",
         fp16=True,
         remove_unused_columns=False,
+        weight_decay=0.01,
+        warmup_ratio=0.1,
+        lr_scheduler_type="cosine",
+        max_grad_norm=1.0,
+        metric_for_best_model="accuracy" if task not in ["stsb", "cola"] else "matthews_correlation" if task == "cola" else "pearson",
     )
 
     def compute_metrics(eval_pred):
-        logits, labels = eval_pred
-        # regression
-        if task == "stsb":
-            # logits may be shape (batch,1) or (batch,)
-            preds = np.squeeze(logits)
-            return metric_fn(preds, labels)
-        # classification
-        preds = np.argmax(logits, axis=-1)
+        preds, labels = eval_pred.predictions, eval_pred.label_ids
+
+        if task == "stsb":  # regression
+            preds = np.squeeze(preds)
+        else:  # classification
+            preds = np.argmax(preds, axis=-1)
+
+        # metric_fn should already return a dict
         return metric_fn(preds, labels)
+
     
     import wandb
     wandb.init(mode="offline")
