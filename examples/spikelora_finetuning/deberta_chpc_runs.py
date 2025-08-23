@@ -205,6 +205,7 @@ def train_and_eval(task: str, params: dict, seed: int = 42):
         trainer.train()
         metrics = trainer.evaluate()
         main_score = pick_main_score(metrics)
+        wandb.finish()
         return float(main_score) if main_score is not None else -999.0
     except Exception as e:
         print(f"[train_and_eval] failed for params={params}: {e}")
