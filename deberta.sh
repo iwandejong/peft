@@ -1,9 +1,8 @@
 #!/bin/bash
-#PBS -N spikelora-deberta
 #PBS -q gpu_1
 #PBS -l select=1:ncpus=9:ngpus=1
 #PBS -P CSCI1166
-#PBS -l walltime=04:10:00
+#PBS -l walltime=04:00:00
 #PBS -m abe
 #PBS -M u22498037@tuks.co.za
  
