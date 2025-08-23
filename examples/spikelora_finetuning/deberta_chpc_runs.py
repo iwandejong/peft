@@ -168,6 +168,7 @@ def train_and_eval(task: str, params: dict, seed: int = 42):
         lr_scheduler_type="cosine",
         max_grad_norm=1.0,
         metric_for_best_model="accuracy" if task not in ["stsb", "cola"] else "matthews_correlation" if task == "cola" else "pearson",
+        evaluation_strategy="epoch",
     )
 
     def compute_metrics(eval_pred):
