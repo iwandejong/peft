@@ -151,13 +151,13 @@ def train_and_eval(task: str, params: dict, seed: int = 42):
 
     # Trainer setup
     training_args = TrainingArguments(
-        output_dir="outputs",
+        output_dir="./out",
+        logging_dir="./logs",
         per_device_train_batch_size=params["batch_size"],
         per_device_eval_batch_size=params["batch_size"],
         learning_rate=params["learning_rate"],
         num_train_epochs=params["num_epochs"],
         save_strategy="no",
-        logging_dir="./logs",
         report_to="wandb",
         logging_steps=100,
         run_name=f"spikelora_finetuning_{task}_{int(time.time())}",
