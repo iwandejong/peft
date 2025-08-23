@@ -47,6 +47,18 @@ MAX_HOURS = {
   "mnli": 12,
 }
 
+NUM_EPOCHS = {
+  "cola": 20,
+  "rte": 50,
+  "wnli": 10,
+  "stsb": 20,
+  "mrpc": 20,
+  "sst2": 10,
+  "qnli": 10,
+  "qqp": 10,
+  "mnli": 10,
+}
+
 MODEL_NAME = "./deberta_v3"
 PATH = "/mnt/lustre/users/idejong/peft"
 
@@ -141,9 +153,9 @@ def train_and_eval(task: str, params: dict, seed: int = 42):
 
     # Apply SpikeLoRA
     config = SpikeLoraConfig(
-        r=params["lora_r"],
-        lora_alpha=params["lora_alpha"],
-        lora_dropout=params["lora_dropout"],
+        r=8,
+        lora_alpha=16,
+        lora_dropout=0.05,
         target_modules=["query_proj", "value_proj"],
         task_type="SEQ_CLS",
         v_threshold=params["v_threshold"],
@@ -153,10 +165,10 @@ def train_and_eval(task: str, params: dict, seed: int = 42):
     # Trainer setup
     training_args = TrainingArguments(
         output_dir="outputs",
-        per_device_train_batch_size=params["batch_size"],
-        per_device_eval_batch_size=params["batch_size"],
-        learning_rate=params["learning_rate"],
-        num_train_epochs=params["num_epochs"],
+        per_device_train_batch_size=32,
+        per_device_eval_batch_size=32,
+        learning_rate=8e-4,
+        num_train_epochs=NUM_EPOCHS[task],
         save_strategy="no",
         logging_dir="logs",
         report_to="wandb",
@@ -213,12 +225,6 @@ def train_and_eval(task: str, params: dict, seed: int = 42):
 # --- Hyperparameter Search with Pyhopper ---
 def run_search(task: str):
     search = ph.Search(
-      learning_rate = ph.float(1e-5, 5e-4, log=True),
-      batch_size = ph.choice([8, 16, 32]),
-      num_epochs = ph.int(2, 3),
-      lora_r = ph.int(4, 64),
-      lora_alpha = ph.int(8, 64),
-      lora_dropout = ph.float(0.0, 0.3),
       v_threshold = ph.float(0.1, 1.0),
     )
 
