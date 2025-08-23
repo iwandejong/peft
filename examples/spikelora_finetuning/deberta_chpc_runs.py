@@ -151,8 +151,8 @@ def train_and_eval(task: str, params: dict, seed: int = 42):
         fp16=True,
         remove_unused_columns=False,
         weight_decay=0.01,
-        warmup_ratio=0.1,
-        lr_scheduler_type="cosine",
+        # warmup_ratio=0.1,
+        # lr_scheduler_type="cosine",
         max_grad_norm=1.0,
         metric_for_best_model="accuracy" if task not in ["stsb", "cola"] else "matthews_correlation" if task == "cola" else "pearson",
     )
