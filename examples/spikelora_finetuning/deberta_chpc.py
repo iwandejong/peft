@@ -117,7 +117,7 @@ def train_and_eval(task: str, params: dict, seed: int = 42):
     tokenizer = DebertaV2Tokenizer.from_pretrained(f"{PATH}/deberta_v3")
 
     val_split = get_validation_split(dataset)
-    train_ds = dataset["train"].select(range(100000))  # limit to 100000 samples
+    train_ds = dataset["train"]
     val_ds = dataset[val_split]
 
     def preprocess(example):
