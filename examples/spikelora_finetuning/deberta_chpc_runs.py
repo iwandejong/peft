@@ -231,7 +231,7 @@ def run(task: str, seed: int = 42):
     if task not in BEST_PARAMS:
         raise ValueError(f"No best params for task {task}")
     params = BEST_PARAMS[task]
-    params["num_epochs"] *= 3  # run longer
+    # params["num_epochs"] *= 3  # run longer
     print(f"Running task {task} with params: {params}")
     score = train_and_eval(task, params, seed)
     print(f"Final score for task {task}: {score}")
