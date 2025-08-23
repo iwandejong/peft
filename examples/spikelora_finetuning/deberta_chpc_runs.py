@@ -170,15 +170,25 @@ def train_and_eval(task: str, params: dict, seed: int = 42):
         metric_for_best_model="accuracy" if task not in ["stsb", "cola"] else "matthews_correlation" if task == "cola" else "pearson",
     )
 
+    def safe_corr(x, y, corr_fn):
+        try:
+              r = corr_fn(x, y)[0]
+              if np.isnan(r):
+                  return 0.0  # fallback
+              return r
+        except Exception:
+            return 0.0
+
     def compute_metrics(eval_pred):
-        preds, labels = eval_pred.predictions, eval_pred.label_ids
-
-        if task == "stsb":  # regression
-            preds = np.squeeze(preds)
-        else:  # classification
-            preds = np.argmax(preds, axis=-1)
-
-        # metric_fn should already return a dict
+        logits, labels = eval_pred
+        # regression
+        if task == "stsb":
+            preds = np.squeeze(logits)
+            pear = safe_corr(labels, preds, pearsonr)
+            spear = safe_corr(labels, preds, spearmanr)
+            return {"pearson": pear, "spearman": spear}
+        # classification
+        preds = np.argmax(logits, axis=-1)
         return metric_fn(preds, labels)
 
     
