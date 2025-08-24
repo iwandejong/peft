@@ -1,5 +1,4 @@
 #!/bin/bash
-#PBS -N spikelora-deberta
 #PBS -q gpu_1
 #PBS -l select=1:ncpus=9:ngpus=1
 #PBS -P CSCI1166
@@ -27,9 +26,8 @@ source /mnt/lustre/users/idejong/peft/venv/bin/activate
 # Check CUDA version and availability
 python3 -c "import torch; print(torch.version.cuda, torch.cuda.is_available())"
 
-SEED=${SEED:-0}
-TASK=${TASK:-cola}
-
+TASK=${TASK:-sst2}
+ 
 # run 
-rm -f spikelora_output.log spikelora_error.log
-python3 examples/spikelora_finetuning/deberta_chpc_runs.py --seed "$SEED" --task "$TASK" > ${TASK}_${SEED}_output.log 2> ${TASK}_${SEED}_error.log
+rm -f ${TASK}_output.log ${TASK}_error.log
+python3 examples/spikelora_finetuning/deberta_chpc_runs.py --task "$TASK" > ${TASK}_output.log 2> ${TASK}_error.log
