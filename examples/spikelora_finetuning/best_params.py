@@ -19,7 +19,7 @@
 # }
 
 BEST_PARAMS = {
-  "cola": {'learning_rate': 3e-4, 'batch_size': 8, 'num_epochs': 20, 'lora_r': 16, 'lora_alpha': 16, 'lora_dropout': 0.0, 'v_threshold': 0.25}, # 4
+  "cola": {'learning_rate': 3e-4, 'batch_size': 8, 'num_epochs': 10, 'lora_r': 16, 'lora_alpha': 16, 'lora_dropout': 0.0, 'v_threshold': 0.25}, # 4
   "mrpc": {'learning_rate': 3e-4, 'batch_size': 8, 'num_epochs': 20, 'lora_r': 16, 'lora_alpha': 16, 'lora_dropout': 0.0, 'v_threshold': 0.25}, # 4
   "stsb": {'learning_rate': 3e-4, 'batch_size': 8, 'num_epochs': 20, 'lora_r':16, 'lora_alpha': 16, 'lora_dropout': 0.0, 'v_threshold': 0.25}, # 4
 
