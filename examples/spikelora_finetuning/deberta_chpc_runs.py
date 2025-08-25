@@ -150,9 +150,9 @@ def train_and_eval(task: str, params: dict, seed: int = 42):
         run_name=f"spikelora_finetuning_{task}_{int(time.time())}",
         fp16=True,
         remove_unused_columns=False,
-        weight_decay=0.01,
-        # warmup_ratio=0.1,
-        # lr_scheduler_type="cosine",
+        lr_scheduler_type="constant",
+        warmup_ratio=0.0,
+        warmup_steps=0,
         max_grad_norm=1.0,
         metric_for_best_model="accuracy" if task not in ["stsb", "cola"] else "matthews_correlation" if task == "cola" else "pearson",
     )
