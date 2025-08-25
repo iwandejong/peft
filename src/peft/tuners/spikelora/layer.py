@@ -93,9 +93,12 @@ class SpikeLoraLayer(nn.Module):
         # LoRA path: x -> A -> dropout -> SpikeLoRA -> B -> scale
         lora_output = self.lora_A(x)
         drop_out = self.lora_dropout(lora_output)
-        lora_output = self.lora_A_lif(drop_out) # SpikeLoRA activation
-        # scale lora_output with drop_out magnitude (spikelora output is binary and thus loses magnitude info)
-        lora_output = lora_output * drop_out.mean(dim=-1, keepdim=True)
+
+        # SpikeLORA
+        lora_spikes = self.lora_A_lif(drop_out) # SpikeLoRA activation
+        lora_spikes = lora_spikes.to(torch.bool) # Convert to binary spikes
+        lora_output = drop_out.masked_fill(~lora_spikes, 0.0) # Mask non-spike values to zero
+
         lora_output = self.lora_B(lora_output)
         lora_output = lora_output * self.scaling
 
