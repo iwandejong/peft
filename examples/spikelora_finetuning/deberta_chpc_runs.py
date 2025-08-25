@@ -152,9 +152,9 @@ def train_and_eval(task: str, params: dict, seed: int = 42):
         fp16=True,
         remove_unused_columns=False,
         lr_scheduler_type="constant",
-        warmup_ratio=0.0,
+        warmup_ratio=0.06,
         warmup_steps=0,
-        max_grad_norm=1.0,
+        max_grad_norm=0.1,
         metric_for_best_model="accuracy" if task not in ["stsb", "cola"] else "matthews_correlation" if task == "cola" else "pearson",
     )
 
@@ -216,7 +216,7 @@ def train_and_eval(task: str, params: dict, seed: int = 42):
 
 # --- Run with param setup ---
 def run(task: str):
-    seeds = [0, 1, 2, 3, 4]
+    seeds = [100]
     from best_params import BEST_PARAMS
     if task not in BEST_PARAMS:
         raise ValueError(f"No best params for task {task}")
