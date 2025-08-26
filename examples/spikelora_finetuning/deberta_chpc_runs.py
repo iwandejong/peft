@@ -151,7 +151,6 @@ def train_and_eval(task: str, params: dict, seed: int = 42):
         run_name=f"spikelora_finetuning_{task}_{int(time.time())}",
         fp16=True,
         remove_unused_columns=False,
-        lr_scheduler_type="constant",
         warmup_ratio=0.06,
         warmup_steps=0,
         max_grad_norm=0.1,
