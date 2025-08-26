@@ -80,7 +80,7 @@ TASK_TO_KEYS = {
 }
 
 # --- Train/Eval function ---
-def train_and_eval(task: str, params: dict, seed: int = 42):
+def train_and_eval(task: str, params: dict, seed: int = 42, lora: bool = False) -> float:
     set_seed(seed)
 
     # Load dataset & metric
@@ -126,15 +126,25 @@ def train_and_eval(task: str, params: dict, seed: int = 42):
     )
 
     # Apply SpikeLoRA
-    config = SpikeLoraConfig(
-    # config = LoraConfig(
+    config = None
+    if lora:
+      config =  LoraConfig( 
+        r=params["lora_r"],
+        lora_alpha=params["lora_alpha"],
+        lora_dropout=params["lora_dropout"],
+        target_modules="all-linear",
+        task_type="SEQ_CLS"
+      )
+    else:
+      config = SpikeLoraConfig(
         r=params["lora_r"],
         lora_alpha=params["lora_alpha"],
         lora_dropout=params["lora_dropout"],
         target_modules="all-linear",
         task_type="SEQ_CLS",
         v_threshold=params["v_threshold"],
-    )
+      )
+  
     model = get_peft_model(model, config)
 
     # Trainer setup
@@ -214,7 +224,7 @@ def train_and_eval(task: str, params: dict, seed: int = 42):
         return -999.0
 
 # --- Run with param setup ---
-def run(task: str):
+def run(task: str, lora: bool = False):
     seeds = [100]
     from best_params import BEST_PARAMS
     if task not in BEST_PARAMS:
@@ -225,7 +235,7 @@ def run(task: str):
     scores = []
     for seed in seeds:
       print(f"Seed {seed}...")
-      score = train_and_eval(task, params, seed)
+      score = train_and_eval(task, params, seed, lora)
       scores.append(score)
       print(f"Score for seed {seed}: {score}")
     score = np.mean(scores)
@@ -236,5 +246,6 @@ if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument("--task", type=str, default="cola", help="GLUE task name")
+    parser.add_argument("--lora", action="store_true", help="Use LoRA instead of SpikeLoRA")
     args = parser.parse_args()
     run(args.task)
