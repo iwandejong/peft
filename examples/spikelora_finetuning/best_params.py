@@ -24,10 +24,10 @@ BEST_PARAMS = {
   "stsb": {'learning_rate': 3e-4, 'batch_size': 8, 'num_epochs': 10, 'lora_r': 8, 'lora_alpha': 16, 'lora_dropout': 0.0, 'v_threshold': 0.25}, # 4
 
   # "wnli": {'learning_rate': 8e-4, 'batch_size': 32, 'num_epochs': 10, 'lora_r': 8, 'lora_alpha': 16, 'lora_dropout': 0.0, 'v_threshold': 0.5}, # 4
-  "sst2": {'learning_rate': 3e-4, 'batch_size': 8, 'num_epochs': 10, 'lora_r': 8, 'lora_alpha': 16, 'lora_dropout': 0.0, 'v_threshold': 0.25}, # 12
-  "qnli": {'learning_rate': 3e-4, 'batch_size': 8, 'num_epochs': 10, 'lora_r': 8, 'lora_alpha': 16, 'lora_dropout': 0.0, 'v_threshold': 0.25}, # 12
-  "mnli": {'learning_rate': 3e-4, 'batch_size': 8, 'num_epochs': 10, 'lora_r': 8, 'lora_alpha': 16, 'lora_dropout': 0.0, 'v_threshold': 0.25}, # 12
-  "qqp": {'learning_rate': 3e-4, 'batch_size': 8, 'num_epochs': 10, 'lora_r': 8, 'lora_alpha': 16, 'lora_dropout': 0.0, 'v_threshold': 0.25}, # 12
+  "sst2": {'learning_rate': 3e-4, 'batch_size': 16, 'num_epochs': 10, 'lora_r': 8, 'lora_alpha': 16, 'lora_dropout': 0.0, 'v_threshold': 0.25}, # 12
+  "qnli": {'learning_rate': 3e-4, 'batch_size': 16, 'num_epochs': 10, 'lora_r': 8, 'lora_alpha': 16, 'lora_dropout': 0.0, 'v_threshold': 0.25}, # 12
+  "mnli": {'learning_rate': 3e-4, 'batch_size': 16, 'num_epochs': 10, 'lora_r': 8, 'lora_alpha': 16, 'lora_dropout': 0.0, 'v_threshold': 0.25}, # 12
+  "qqp": {'learning_rate': 3e-4, 'batch_size': 32, 'num_epochs': 10, 'lora_r': 8, 'lora_alpha': 16, 'lora_dropout': 0.0, 'v_threshold': 0.25}, # 12
 
   "rte": {'learning_rate': 3e-4, 'batch_size': 32, 'num_epochs': 10, 'lora_r': 8, 'lora_alpha': 16, 'lora_dropout': 0.0, 'v_threshold': 0.25}, # 4
 }
