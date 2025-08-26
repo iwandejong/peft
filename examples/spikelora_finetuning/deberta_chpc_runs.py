@@ -126,14 +126,14 @@ def train_and_eval(task: str, params: dict, seed: int = 42):
     )
 
     # Apply SpikeLoRA
-    # config = SpikeLoraConfig(
-    config = LoraConfig(
+    config = SpikeLoraConfig(
+    # config = LoraConfig(
         r=params["lora_r"],
         lora_alpha=params["lora_alpha"],
         lora_dropout=params["lora_dropout"],
         target_modules="all-linear",
         task_type="SEQ_CLS",
-        # v_threshold=params["v_threshold"],
+        v_threshold=params["v_threshold"],
     )
     model = get_peft_model(model, config)
 
