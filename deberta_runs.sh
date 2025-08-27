@@ -30,7 +30,7 @@ python3 -c "import torch; print(torch.version.cuda, torch.cuda.is_available())"
 
 TASK=${TASK:-sst2}
 ADD=${ADD:-""}
-LORA=${LORA:-"false"}
+LORA=${LORA:-""}
 if [ "$LORA" = "true" ] ; then
     LORA="--lora"
 else
@@ -38,5 +38,6 @@ else
 fi
  
 # run 
+echo "Running: python3 examples/spikelora_finetuning/deberta_chpc_runs.py --task $TASK $LORA"
 rm -f ${TASK}_${LORA}_${ADD}_output.log ${TASK}_${LORA}_${ADD}_error.log
-python3 examples/spikelora_finetuning/deberta_chpc_runs.py --task "$TASK" $LORA > ${TASK}_${LORA}_${ADD}_output.log 2> ${TASK}_${LORA}_${ADD}_error.log
+python3 examples/spikelora_finetuning/deberta_chpc_runs.py --task "$TASK" ${LORA} > ${TASK}_${LORA}_${ADD}_output.log 2> ${TASK}_${LORA}_${ADD}_error.log
