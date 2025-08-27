@@ -248,4 +248,4 @@ if __name__ == "__main__":
     parser.add_argument("--task", type=str, default="cola", help="GLUE task name")
     parser.add_argument("--lora", action="store_true", help="Use LoRA instead of SpikeLoRA")
     args = parser.parse_args()
-    run(args.task)
+    run(args.task, args.lora)
