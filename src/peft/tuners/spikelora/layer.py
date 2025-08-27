@@ -2,8 +2,9 @@ import math
 import torch
 import torch.nn as nn
 from spikingjelly.clock_driven import neuron, surrogate
+from peft.tuners.tuners_utils import BaseTunerLayer
 
-class SpikeLoraLayer(nn.Module):
+class SpikeLoraLayer(BaseTunerLayer):
     """SpikeLoRA layer that applies LoRA to a base linear layer with spiking activation.
     Args:
         base_layer: The original linear layer to apply LoRA to.

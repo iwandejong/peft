@@ -44,6 +44,7 @@ class PeftType(str, enum.Enum):
     - RANDLORA
     - SHIRA
     - C3A
+    - SPIKELORA
     """
 
     PROMPT_TUNING = "PROMPT_TUNING"
