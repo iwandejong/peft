@@ -128,6 +128,7 @@ def train_and_eval(task: str, params: dict, seed: int = 42, lora: bool = False) 
     # Apply SpikeLoRA
     config = None
     if lora:
+      print("Using standard LoRA")
       config =  LoraConfig( 
         r=params["lora_r"],
         lora_alpha=params["lora_alpha"],
@@ -136,6 +137,7 @@ def train_and_eval(task: str, params: dict, seed: int = 42, lora: bool = False) 
         task_type="SEQ_CLS"
       )
     else:
+      print("Using SpikeLoRA")
       config = SpikeLoraConfig(
         r=params["lora_r"],
         lora_alpha=params["lora_alpha"],
