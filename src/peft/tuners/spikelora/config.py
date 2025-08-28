@@ -1,9 +1,6 @@
-from dataclasses import dataclass
-
 from peft.tuners.lora import LoraConfig
 from peft.utils import PeftType
 
-@dataclass
 class SpikeLoraConfig(LoraConfig):
     """Configuration class for SpikeLoRA, inheriting from LoraConfig.
     This class extends the LoRA configuration to include a spiking activation threshold.
