@@ -149,6 +149,10 @@ def train_and_eval(task: str, params: dict, seed: int = 42, lora: bool = False) 
   
     model = get_peft_model(model, config)
 
+    # print model type and number of trainable params
+    model.print_trainable_parameters()
+    print("Wrapped model:", model)
+
     # Trainer setup
     training_args = TrainingArguments(
         output_dir="./out",
