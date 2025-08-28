@@ -3,7 +3,9 @@ import torch.nn as nn
 from .config import SpikeLoraConfig
 from .layer import SpikeLoraLayer, replace_linear_with_lora
 
-class SpikeLoraModel(nn.Module):
+from peft.tuners.tuners_utils import BaseTuner
+
+class SpikeLoraModel(BaseTuner):
     """
     SpikeLoRA model that applies LoRA to specified modules in a base model.
     Args:
@@ -19,24 +21,6 @@ class SpikeLoraModel(nn.Module):
         get_trainable_params: Get number of trainable parameters.
         print_trainable_params: Print number of trainable parameters.
     """
-    
-    def __init__(self, model: nn.Module, config: SpikeLoraConfig):
-        """
-        Args:
-            model: Pretrained model to apply LoRA to.
-            config: Configuration for SpikeLoRA.
-        """
-        super().__init__()
-        
-        self.base_model = model
-        self.config = config
-        self.lora_layers = []
-        
-        # Apply LoRA to target modules
-        self._add_lora_layers()
-        
-        # Only LoRA parameters are trainable
-        self._freeze_base_model()
     
     def _add_lora_layers(self):
         """Add LoRA layers to target modules."""
