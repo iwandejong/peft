@@ -103,8 +103,11 @@ class LoraLayer(BaseTunerLayer):
         self._disable_adapters = False
         self.merged_adapters = []
         self.use_dora: dict[str, bool] = {}  # not actively used anymore after #2443, keep it for BC
+        self.use_spikelora: dict[str, bool] = {}  # for SpikeLoRA
+        self.spikelora_v_threshold: dict[str, float] = {}  # for SpikeLoRA
         self.lora_bias: dict[str, bool] = {}
         self.lora_magnitude_vector = torch.nn.ModuleDict()  # for DoRA
+        self.lora_spike_layer = torch.nn.ModuleDict()  # for SpikeLoRA
         self._caches: dict[str, Any] = {}
         self.ephemeral_gpu_offload: bool = ephemeral_gpu_offload
         # flag to enable/disable casting of input to weight dtype during forward call
@@ -193,6 +196,8 @@ class LoraLayer(BaseTunerLayer):
         init_lora_weights,
         use_rslora,
         use_dora: bool = False,
+        use_spikelora: bool = True,
+        spikelora_v_threshold: float = 1.0,
         use_qalora: bool = False,
         lora_bias: bool = False,
         qalora_group_size: int = 32,
@@ -214,7 +219,7 @@ class LoraLayer(BaseTunerLayer):
             )
 
         lora_variant = self.resolve_lora_variant(
-            use_dora=use_dora, use_qalora=use_qalora, qalora_group_size=qalora_group_size
+            use_dora=use_dora, use_spikelora=use_spikelora, use_qalora=use_qalora, qalora_group_size=qalora_group_size
         )
         if lora_variant is not None:
             self.lora_variant[adapter_name] = lora_variant
@@ -239,6 +244,8 @@ class LoraLayer(BaseTunerLayer):
             self.scaling[adapter_name] = lora_alpha / r
 
         self.use_dora[adapter_name] = use_dora
+        self.use_spikelora[adapter_name] = use_spikelora
+        self.spikelora_v_threshold[adapter_name] = spikelora_v_threshold
 
         # for inits that require access to the base weight, use gather_param_ctx so that the weight is gathered when using DeepSpeed
         if isinstance(init_lora_weights, str) and init_lora_weights.startswith("pissa"):
@@ -613,6 +620,8 @@ class Linear(nn.Module, LoraLayer):
         init_lora_weights: Union[bool, str] = True,
         use_rslora: bool = False,
         use_dora: bool = False,
+        use_spikelora: bool = False,
+        spikelora_v_threshold: float = 1.0,
         lora_bias: bool = False,
         **kwargs,
     ) -> None:
@@ -629,17 +638,20 @@ class Linear(nn.Module, LoraLayer):
             init_lora_weights=init_lora_weights,
             use_rslora=use_rslora,
             use_dora=use_dora,
+            use_spikelora=use_spikelora,
+            spikelora_v_threshold=spikelora_v_threshold,
             lora_bias=lora_bias,
         )
         self.is_target_conv_1d_layer = is_target_conv_1d_layer
 
-    def resolve_lora_variant(self, *, use_dora: bool, **kwargs) -> Optional[LoraVariant]:
-        if not use_dora:
-            return None
-
-        from .variants import DoraLinearVariant
-
-        return DoraLinearVariant()
+    def resolve_lora_variant(self, *, use_dora: bool, use_spikelora: bool = True, **kwargs) -> Optional[LoraVariant]:
+        if use_dora:
+            from .variants import DoraLinearVariant
+            return DoraLinearVariant()
+        elif use_spikelora:
+            from .variants import SpikeLoraLinearVariant
+            return SpikeLoraLinearVariant()
+        return None
 
     def merge(self, safe_merge: bool = False, adapter_names: Optional[list[str]] = None) -> None:
         """
@@ -822,6 +834,8 @@ class Embedding(nn.Module, LoraLayer):
         init_lora_weights: Union[bool, str] = True,
         use_rslora: bool = False,
         use_dora: bool = False,
+        use_spikelora: bool = True,
+        spikelora_v_threshold: float = 1.0,
         lora_bias: bool = False,
         **kwargs,
     ) -> None:
@@ -842,19 +856,22 @@ class Embedding(nn.Module, LoraLayer):
             init_lora_weights=init_lora_weights,
             use_rslora=use_rslora,
             use_dora=use_dora,
+            use_spikelora=use_spikelora,
+            spikelora_v_threshold=spikelora_v_threshold,
             lora_bias=lora_bias,
         )
 
-    def resolve_lora_variant(self, *, use_dora: bool, **kwargs) -> Optional[LoraVariant]:
-        if not use_dora:
-            return None
-
-        from .variants import DoraEmbeddingVariant
-
-        return DoraEmbeddingVariant()
+    def resolve_lora_variant(self, *, use_dora: bool, use_spikelora: bool = True, **kwargs) -> Optional[LoraVariant]:
+        if use_dora:
+            from .variants import DoraEmbeddingVariant
+            return SpikeLoraEmbeddingVariant()
+        elif use_spikelora:
+            from .variants import SpikeLoraEmbeddingVariant
+            return SpikeLoraEmbeddingVariant()
+        return None
 
     def update_layer(
-        self, adapter_name, r, lora_alpha, lora_dropout, init_lora_weights, use_rslora, use_dora, lora_bias
+        self, adapter_name, r, lora_alpha, lora_dropout, init_lora_weights, use_rslora, use_dora, use_spikelora, spikelora_v_threshold, lora_bias
     ):
         # collect the kwargs
         kwargs = locals().copy()
@@ -863,7 +880,7 @@ class Embedding(nn.Module, LoraLayer):
         if r <= 0:
             raise ValueError(f"`r` should be a positive integer value but the value passed is {r}")
 
-        lora_variant = self.resolve_lora_variant(use_dora=use_dora)
+        lora_variant = self.resolve_lora_variant(use_dora=use_dora, use_spikelora=use_spikelora)
         if lora_variant is not None:
             self.lora_variant[adapter_name] = lora_variant
 
@@ -888,6 +905,8 @@ class Embedding(nn.Module, LoraLayer):
             self.scaling[adapter_name] = lora_alpha / r
 
         self.use_dora[adapter_name] = use_dora
+        self.use_spikelora[adapter_name] = use_spikelora
+        self.spikelora_v_threshold[adapter_name] = spikelora_v_threshold
 
         if init_lora_weights == "loftq":
             self.loftq_init(adapter_name)
@@ -1381,13 +1400,14 @@ class Conv2d(_ConvNd):
             raise ValueError(f"Conv2d layer kernel must have 4 dimensions, not {self._kernel_dim}")
         self.conv_fn = F.conv2d
 
-    def resolve_lora_variant(self, *, use_dora: bool, **kwargs) -> Optional[LoraVariant]:
-        if not use_dora:
-            return None
-
-        from .variants import DoraConv2dVariant
-
-        return DoraConv2dVariant()
+    def resolve_lora_variant(self, *, use_dora: bool, use_spikelora: bool = True, **kwargs) -> Optional[LoraVariant]:
+        if use_dora:
+            from .variants import DoraConv2dVariant
+            return DoraConv2dVariant()
+        elif use_spikelora:
+            from .variants import SpikeLoraConv2dVariant
+            return SpikeLoraConv2dVariant()
+        return None
 
 
 class Conv1d(_ConvNd):
@@ -1398,13 +1418,14 @@ class Conv1d(_ConvNd):
             raise ValueError(f"Conv1d layer kernel must have 3 dimensions, not {self._kernel_dim}")
         self.conv_fn = F.conv1d
 
-    def resolve_lora_variant(self, *, use_dora: bool, **kwargs) -> Optional[LoraVariant]:
-        if not use_dora:
-            return None
-
-        from .variants import DoraConv1dVariant
-
-        return DoraConv1dVariant()
+    def resolve_lora_variant(self, *, use_dora: bool, use_spikelora: bool = True, **kwargs) -> Optional[LoraVariant]:
+        if use_dora:
+            from .variants import DoraConv1dVariant
+            return DoraConv1dVariant()
+        elif use_spikelora:
+            from .variants import SpikeLoraConv1dVariant
+            return SpikeLoraConv1dVariant()
+        return None
 
 
 class Conv3d(_ConvNd):
@@ -1415,13 +1436,14 @@ class Conv3d(_ConvNd):
             raise ValueError(f"Conv3d layer kernel must have 5 dimensions, not {self._kernel_dim}")
         self.conv_fn = F.conv3d
 
-    def resolve_lora_variant(self, *, use_dora: bool, **kwargs) -> Optional[LoraVariant]:
-        if not use_dora:
-            return None
-
-        from .variants import DoraConv3dVariant
-
-        return DoraConv3dVariant()
+    def resolve_lora_variant(self, *, use_dora: bool, use_spikelora: bool = True, **kwargs) -> Optional[LoraVariant]:
+        if use_dora:
+            from .variants import DoraConv3dVariant
+            return DoraConv3dVariant()
+        elif use_spikelora:
+            from .variants import SpikeLoraConv3dVariant
+            return SpikeLoraConv3dVariant()
+        return None
 
 
 class MultiheadAttention(nn.Module, LoraLayer):

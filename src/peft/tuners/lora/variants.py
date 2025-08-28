@@ -22,6 +22,7 @@ from torch import nn
 from peft.utils.other import transpose
 
 from .dora import DoraConv1dLayer, DoraConv2dLayer, DoraConv3dLayer, DoraEmbeddingLayer, DoraLinearLayer
+from .spikelora import SpikeLoraConv1dLayer, SpikeLoraConv2dLayer, SpikeLoraConv3dLayer, SpikeLoraEmbeddingLayer, SpikeLoraLinearLayer
 from .layer import Conv1d, Conv2d, Conv3d, Embedding, Linear, LoraVariant, _ConvNd
 
 
@@ -315,6 +316,153 @@ class DoraConv3dVariant(_DoraConvNdVariant):
     def init(module: Conv3d, adapter_name: str, **kwargs: Any) -> None:
         dora_layer = DoraConv3dLayer(fan_in_fan_out=False)
         _DoraConvNdVariant.init_convd_variant(module, adapter_name, dora_layer=dora_layer)
+
+
+class SpikeLoraLinearVariant(LoraVariant):
+    @staticmethod
+    def init(module: Linear, adapter_name: str, **kwargs: Any) -> None:
+        if not module.lora_spike_layer:
+            # first spikelora layer being added, add lora_spike_layer to the list of learnable parameters
+            module.adapter_layer_names = module.adapter_layer_names[:] + ("lora_spike_layer",)
+
+        spikelora_layer = SpikeLoraLinearLayer(fan_in_fan_out=getattr(module, "fan_in_fan_out", False))
+        enable_spike = kwargs.get("use_spikelora", True)
+        v_threshold = kwargs.get("spikelora_v_threshold", 1.0)
+        
+        spikelora_layer.update_layer(
+            base_layer=module.get_base_layer(),
+            lora_A=None,  # Will be set in forward
+            lora_B=None,  # Will be set in forward
+            scaling=None,  # Will be set in forward
+            enable_spike=enable_spike,
+            v_threshold=v_threshold,
+        )
+        module.lora_spike_layer[adapter_name] = spikelora_layer
+
+    @staticmethod
+    def forward(module: Linear, active_adapter: str, x: torch.Tensor, result: torch.Tensor) -> torch.Tensor:
+        lora_A = module.lora_A[active_adapter]
+        lora_B = module.lora_B[active_adapter]
+        dropout = module.lora_dropout[active_adapter]
+        scaling = module.scaling[active_adapter]
+
+        if isinstance(dropout, nn.Identity) or not module.training:
+            base_result = result
+        else:
+            x = dropout(x)
+            base_result = None
+
+        lora_result = module.lora_spike_layer[active_adapter](
+            x,
+            lora_A=lora_A,
+            lora_B=lora_B,
+            scaling=scaling,
+            base_layer=module.get_base_layer(),
+            base_result=base_result,
+        )
+        return result + lora_result
+
+
+class SpikeLoraEmbeddingVariant(SpikeLoraLinearVariant):
+    @staticmethod
+    def init(module: Embedding, adapter_name: str, **kwargs: Any) -> None:
+        if module.lora_spike_layer is None:
+            # first spikelora layer being added, add lora_spike_layer to the list of learnable parameters
+            module.adapter_layer_names = module.adapter_layer_names[:] + ("lora_spike_layer",)
+
+        spikelora_layer = SpikeLoraEmbeddingLayer(fan_in_fan_out=True)
+        enable_spike = kwargs.get("use_spikelora", True)
+        v_threshold = kwargs.get("spikelora_v_threshold", 1.0)
+        
+        spikelora_layer.update_layer(
+            base_layer=module.get_base_layer(),
+            lora_A=None,  # Will be set in forward
+            lora_B=None,  # Will be set in forward
+            scaling=None,  # Will be set in forward
+            enable_spike=enable_spike,
+            v_threshold=v_threshold,
+        )
+        module.lora_spike_layer[adapter_name] = spikelora_layer
+
+    @staticmethod
+    def forward(module: Embedding, active_adapter: str, x: torch.Tensor, result: torch.Tensor) -> torch.Tensor:
+        lora_embedding_A = module.lora_embedding_A[active_adapter]
+        lora_embedding_B = module.lora_embedding_B[active_adapter]
+        scaling = module.scaling[active_adapter]
+
+        lora_result = module.lora_spike_layer[active_adapter](
+            x,
+            lora_A=lora_embedding_A,
+            lora_B=lora_embedding_B,
+            scaling=scaling,
+            base_layer=module.get_base_layer(),
+            embed_fn=module.get_base_layer(),
+        )
+        return result + lora_result
+
+
+class SpikeLoraConv1dVariant(SpikeLoraLinearVariant):
+    @staticmethod
+    def init(module: Conv1d, adapter_name: str, **kwargs: Any) -> None:
+        if not module.lora_spike_layer:
+            # first spikelora layer being added, add lora_spike_layer to the list of learnable parameters
+            module.adapter_layer_names = module.adapter_layer_names[:] + ("lora_spike_layer",)
+
+        spikelora_layer = SpikeLoraConv1dLayer(fan_in_fan_out=False)
+        enable_spike = kwargs.get("use_spikelora", True)
+        v_threshold = kwargs.get("spikelora_v_threshold", 1.0)
+        
+        spikelora_layer.update_layer(
+            base_layer=module.get_base_layer(),
+            lora_A=None,  # Will be set in forward
+            lora_B=None,  # Will be set in forward
+            scaling=None,  # Will be set in forward
+            enable_spike=enable_spike,
+            v_threshold=v_threshold,
+        )
+        module.lora_spike_layer[adapter_name] = spikelora_layer
+
+
+class SpikeLoraConv2dVariant(SpikeLoraLinearVariant):
+    @staticmethod
+    def init(module: Conv2d, adapter_name: str, **kwargs: Any) -> None:
+        if not module.lora_spike_layer:
+            # first spikelora layer being added, add lora_spike_layer to the list of learnable parameters
+            module.adapter_layer_names = module.adapter_layer_names[:] + ("lora_spike_layer",)
+
+        spikelora_layer = SpikeLoraConv2dLayer(fan_in_fan_out=False)
+        enable_spike = kwargs.get("use_spikelora", True)
+        v_threshold = kwargs.get("spikelora_v_threshold", 1.0)
+        
+        spikelora_layer.update_layer(
+            base_layer=module.get_base_layer(),
+            lora_A=None,  # Will be set in forward
+            lora_B=None,  # Will be set in forward
+            scaling=None,  # Will be set in forward
+            enable_spike=enable_spike,
+            v_threshold=v_threshold,
+        )
+
+
+class SpikeLoraConv3dVariant(SpikeLoraLinearVariant):
+    @staticmethod
+    def init(module: Conv3d, adapter_name: str, **kwargs: Any) -> None:
+        if not module.lora_spike_layer:
+            # first spikelora layer being added, add lora_spike_layer to the list of learnable parameters
+            module.adapter_layer_names = module.adapter_layer_names[:] + ("lora_spike_layer",)
+
+        spikelora_layer = SpikeLoraConv3dLayer(fan_in_fan_out=False)
+        enable_spike = kwargs.get("use_spikelora", True)
+        v_threshold = kwargs.get("spikelora_v_threshold", 1.0)
+        
+        spikelora_layer.update_layer(
+            base_layer=module.get_base_layer(),
+            lora_A=None,  # Will be set in forward
+            lora_B=None,  # Will be set in forward
+            scaling=None,  # Will be set in forward
+            enable_spike=enable_spike,
+            v_threshold=v_threshold,
+        )
 
 
 class QALoraLinearVariant(LoraVariant):
