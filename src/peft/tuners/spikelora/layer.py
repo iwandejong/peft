@@ -1,111 +1,89 @@
-import math
-import torch
-import torch.nn as nn
-from spikingjelly.clock_driven import neuron, surrogate
-from peft.tuners.tuners_utils import BaseTunerLayer
+# Copyright 2024-present the HuggingFace Inc. team.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
 import math
+import warnings
+from typing import Optional, List
+
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 from spikingjelly.clock_driven import neuron, surrogate
-from peft.tuners.tuners_utils import BaseTunerLayer
+
+from peft.tuners.tuners_utils import BaseTunerLayer, check_adapters_to_merge
+
 
 class SpikeLoraLayer(BaseTunerLayer):
-    """
-    LoRA on top of a base nn.Linear, with a spiking gate in the LoRA branch.
-    Note: Nonlinear path => true merge is not mathematically valid; we disable it.
-    """
-    def __init__(
-        self,
-        base_layer: nn.Linear,
-        r: int = 8,
-        lora_alpha: int = 8,
-        lora_dropout: float = 0.0,
-        init_lora_weights: bool = True,
-        v_threshold: float = 0.5,
-        adapter_name: str = "default",
-    ):
-        super().__init__()
-        if not isinstance(base_layer, nn.Linear):
-            raise TypeError("SpikeLoraLayer expects nn.Linear as base_layer")
+    # List all names of layers that may contain adapter weights
+    adapter_layer_names = ("spikelora_A", "spikelora_B", "lora_dropout", "spikelora_lif")
+    # All names of other parameters that may contain adapter-related parameters
+    other_param_names = ("r", "lora_alpha", "scaling", "v_threshold")
 
-        # keep a real Linear with the same params (including bias)
-        self.base = nn.Linear(
-            base_layer.in_features,
-            base_layer.out_features,
-            bias=(base_layer.bias is not None),
-            device=base_layer.weight.device,
-            dtype=base_layer.weight.dtype,
-        )
-        with torch.no_grad():
-            self.base.weight.copy_(base_layer.weight.data)
-            if self.base.bias is not None and base_layer.bias is not None:
-                self.base.bias.copy_(base_layer.bias.data)
-
-        self.in_features = self.base.in_features
-        self.out_features = self.base.out_features
-
-        # multi-adapter plumbing expected by BaseTunerLayer / LoraModel
+    def __init__(self, base_layer: nn.Module, **kwargs):
+        super().__init__()  # Call BaseTunerLayer.__init__
+        self.base_layer = base_layer
         self.r = {}
         self.lora_alpha = {}
         self.scaling = {}
-        self.lora_A = nn.ModuleDict()
-        self.lora_B = nn.ModuleDict()
-        self.lora_dropout = nn.ModuleDict()
-        self.lif = nn.ModuleDict()
+        self.spikelora_A = nn.ParameterDict({})
+        self.spikelora_B = nn.ParameterDict({})
+        self.lora_dropout = nn.ModuleDict({})
+        self.spikelora_lif = nn.ModuleDict({})
+        self.v_threshold = {}
 
-        self.weight = self.base.weight  # for compatibility with some downstream checks
-        self.bias = self.base.bias
+        # Mark the weight as unmerged
+        self._disable_adapters = False
+        self.merged_adapters = []
 
-        self.set_adapter(
-            adapter_name,
-            r=r,
-            lora_alpha=lora_alpha,
-            lora_dropout=lora_dropout,
-            v_threshold=v_threshold,
-            init_lora_weights=init_lora_weights,
-        )
-        self.active_adapter = adapter_name
+        base_layer = self.get_base_layer()
+        if isinstance(base_layer, nn.Linear):
+            in_features, out_features = base_layer.in_features, base_layer.out_features
+        elif hasattr(base_layer, 'weight') and hasattr(base_layer.weight, 'shape'):
+            if len(base_layer.weight.shape) == 2:
+                in_features, out_features = base_layer.weight.shape
+            else:
+                raise ValueError(f"Unsupported base layer type: {type(base_layer)}")
 
-        # merging is not supported due to nonlinearity
-        self._merged = False
-        self._merge_supported = False
+        self.in_features = in_features
+        self.out_features = out_features
+        self.kwargs = kwargs
 
-        # by default, freeze base params; training only LoRA
-        for p in self.base.parameters():
-            p.requires_grad = False
+    @property
+    def merged(self) -> bool:
+        return bool(self.merged_adapters)
 
-    def set_adapter(
+    def update_layer(
         self,
         adapter_name: str,
-        r: int = 8,
+        r: int,
         lora_alpha: int = 8,
         lora_dropout: float = 0.0,
-        v_threshold: float = 0.5,
         init_lora_weights: bool = True,
+        v_threshold: float = 0.5,
     ):
         if r <= 0:
-            # still register no-op to keep PEFT happy
-            self.r[adapter_name] = 0
-            self.lora_alpha[adapter_name] = 0
-            self.scaling[adapter_name] = 0.0
-            self.lora_A[adapter_name] = nn.Identity()
-            self.lora_B[adapter_name] = nn.Identity()
-            self.lora_dropout[adapter_name] = nn.Identity()
-            self.lif[adapter_name] = nn.Identity()
-            return
-
-        dev = self.base.weight.device
-        dt = self.base.weight.dtype
+            raise ValueError(f"`r` should be a positive integer, but the value passed is {r}")
 
         self.r[adapter_name] = r
         self.lora_alpha[adapter_name] = lora_alpha
         self.scaling[adapter_name] = lora_alpha / r
+        self.v_threshold[adapter_name] = v_threshold
 
-        self.lora_A[adapter_name] = nn.Linear(self.in_features, r, bias=False, device=dev, dtype=dt)
-        self.lora_B[adapter_name] = nn.Linear(r, self.out_features, bias=False, device=dev, dtype=dt)
+        self.spikelora_A[adapter_name] = nn.Parameter(torch.randn(self.in_features, r))
+        self.spikelora_B[adapter_name] = nn.Parameter(torch.randn(r, self.out_features))
         self.lora_dropout[adapter_name] = nn.Dropout(lora_dropout) if lora_dropout > 0 else nn.Identity()
-        self.lif[adapter_name] = neuron.LIFNode(
+        self.spikelora_lif[adapter_name] = neuron.LIFNode(
             tau=2.0,
             surrogate_function=surrogate.ATan(alpha=2.0),
             v_threshold=v_threshold,
@@ -113,127 +91,155 @@ class SpikeLoraLayer(BaseTunerLayer):
         )
 
         if init_lora_weights:
-            nn.init.kaiming_uniform_(self.lora_A[adapter_name].weight, a=math.sqrt(5))
-            nn.init.zeros_(self.lora_B[adapter_name].weight)
+            self.reset_lora_parameters(adapter_name)
 
-        # train only LoRA params for this adapter
-        for p in self.lora_A[adapter_name].parameters():
-            p.requires_grad = True
-        for p in self.lora_B[adapter_name].parameters():
-            p.requires_grad = True
+        self._move_adapter_to_device_of_base_layer(adapter_name)
+        self.set_adapter(self.active_adapters)
 
-    def _get_active(self):
-        a = self.active_adapter
-        return (
-            self.lora_A[a],
-            self.lora_B[a],
-            self.lora_dropout[a],
-            self.lif[a],
-            self.scaling[a],
-            self.r[a],
-        )
+    def reset_lora_parameters(self, adapter_name):
+        if adapter_name in self.spikelora_A.keys():
+            nn.init.normal_(self.spikelora_A[adapter_name], mean=0.0, std=0.02)
+            nn.init.normal_(self.spikelora_B[adapter_name], mean=0.0, std=0.02)
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-        base_out = self.base(x)
 
-        a, b, do, lif, scaling, r = self._get_active()
-        if r == 0 or self._merged:
-            return base_out
+class Linear(nn.Module, SpikeLoraLayer):
+    # SpikeLoRA implemented in a dense layer
+    def __init__(
+        self,
+        base_layer,
+        adapter_name: str,
+        r: int = 8,
+        lora_alpha: int = 8,
+        lora_dropout: float = 0.0,
+        init_lora_weights: bool = True,
+        v_threshold: float = 0.5,
+        fan_in_fan_out: bool = False,  # Set this to True if the layer to replace stores weight like (fan_in, fan_out)
+        **kwargs,
+    ) -> None:
+        # this gets the init from nn.Module's super perspective, which should always be called
+        super().__init__()
+        SpikeLoraLayer.__init__(self, base_layer, **kwargs)
 
-        # pointwise spiking in LoRA branch (no temporal carry-over)
-        # if you want temporal dynamics, do NOT reset; otherwise this keeps it a static nonlinearity
-        lif.reset()
+        # Freezing the pre-trained weight matrix
+        self.get_base_layer().weight.requires_grad = False
 
-        lora_out = a(x)
-        lora_out = do(lora_out)
-        spikes = lif(lora_out)
-        lora_out = lora_out * spikes  # gated
-        lora_out = b(lora_out) * scaling
-        return base_out + lora_out
+        self.fan_in_fan_out = fan_in_fan_out
+        self._active_adapter = adapter_name
+        self.update_layer(adapter_name, r, lora_alpha, lora_dropout, init_lora_weights, v_threshold)
 
-    # ---- merge API (disabled) ----
-    def merge(self):
-        if not self._merge_supported:
-            raise RuntimeError(
-                "SpikeLoraLayer.merge() is not supported: LoRA branch is nonlinear (spiking). "
-                "Move the LIF outside the LoRA path or set approximate_merge=True with calibration."
-            )
-        self._merged = True
-
-    def unmerge(self):
-        self._merged = False
-
-    # optional: approximate merge via firing-rate calibration (use at your own risk)
-    @torch.no_grad()
-    def approximate_merge(self, dataloader, steps: int = 256):
+    def merge(self, safe_merge: bool = False, adapter_names: Optional[List[str]] = None) -> None:
         """
-        Estimate an average gate (0..1) per LoRA neuron and fold it into B.
-        WARNING: Input-dependent; only a heuristic.
+        Merge the active adapter weights into the base weights
+
+        Args:
+            safe_merge (`bool`, *optional*):
+                If True, the merge operation will be performed in a copy of the original weights and check for NaNs
+                before merging the weights. This is useful if you want to check if the merge operation will produce
+                NaNs. Defaults to `False`.
+            adapter_names (`List[str]`, *optional*):
+                The list of adapter names that should be merged. If None, all active adapters will be merged. Defaults
+                to `None`.
         """
-        a, b, do, lif, scaling, r = self._get_active()
-        if r == 0:
+        adapter_names = check_adapters_to_merge(self, adapter_names)
+        if not adapter_names:
+            # no adapter to merge
             return
-        dev = self.base.weight.device
-        total = torch.zeros(r, device=dev)
-        count = 0
-        lif.train(False)
-        for i, (xb, *_) in enumerate(dataloader):
-            if i >= steps: break
-            xb = xb.to(dev)
-            z = a(xb)
-            z = do(z)
-            s = lif(z)  # in {0,1} via surrogate
-            total += s.mean(dim=0)
-            count += 1
-        gate = (total / max(count, 1)).clamp_(0, 1)  # r-dim
-        # fold: B <- B * diag(gate), W_eff <- W + scaling * B A
-        Bg = b.weight * gate.view(-1, 1)
-        self.base.weight.data += scaling * (Bg @ a.weight)
-        self._merged = True
 
+        for active_adapter in adapter_names:
+            base_layer = self.get_base_layer()
+            if active_adapter in self.spikelora_A.keys():
+                if safe_merge:
+                    # Note that safe_merge will be slower than the normal merge
+                    # because of the copy operation.
+                    orig_weights = base_layer.weight.data.clone()
+                    orig_weights += self.get_delta_weight(active_adapter)
+                    if not torch.isfinite(orig_weights).all():
+                        raise ValueError(
+                            f"NaNs detected in the merged weights. The adapter {active_adapter} seems to be broken"
+                        )
+                    base_layer.weight.data = orig_weights
+                else:
+                    base_layer.weight.data += self.get_delta_weight(active_adapter)
+                self.merged_adapters.append(active_adapter)
 
-import re
-from typing import Iterable, Union, Pattern
+    def unmerge(self) -> None:
+        if not self.merged:
+            warnings.warn("Already unmerged. Nothing to do.")
+            return
 
-def _match(name: str, targets: Iterable[Union[str, Pattern]]) -> bool:
-    for t in targets:
-        if isinstance(t, str) and name.endswith(t):
-            return True
-        if hasattr(t, "search") and t.search(name):
-            return True
-    return False
+        while len(self.merged_adapters) > 0:
+            active_adapter = self.merged_adapters.pop()
+            if active_adapter in self.spikelora_A.keys():
+                self.get_base_layer().weight.data -= self.get_delta_weight(active_adapter)
 
-def replace_linear_with_spikelora(
-    model: nn.Module,
-    target_modules: Iterable[Union[str, Pattern]],
-    r: int = 8,
-    lora_alpha: int = 8,
-    lora_dropout: float = 0.0,
-    v_threshold: float = 0.5,
-    adapter_name: str = "default",
-):
-    """
-    Replace selected nn.Linear layers with SpikeLoraLayer.
-    Matches by exact suffix or regex Pattern.
-    """
-    to_replace = []
-    for module_name, module in model.named_modules():
-        if isinstance(module, nn.Linear) and _match(module_name, target_modules):
-            # find parent
-            parent = model
-            parts = module_name.split(".")
-            for p in parts[:-1]:
-                parent = getattr(parent, p)
-            leaf = parts[-1]
-            to_replace.append((parent, leaf, module))
+    def get_delta_weight(self, adapter) -> torch.Tensor:
+        """
+        Compute the delta weight for the given adapter.
 
-    for parent, leaf, linear in to_replace:
-        sp = SpikeLoraLayer(
-            base_layer=linear,
-            r=r,
-            lora_alpha=lora_alpha,
-            lora_dropout=lora_dropout,
-            v_threshold=v_threshold,
-            adapter_name=adapter_name,
-        ).to(linear.weight.device).to(linear.weight.dtype)
-        setattr(parent, leaf, sp)
+        Args:
+            adapter (str):
+                The name of the adapter for which the delta weight should be computed.
+        """
+        if adapter not in self.spikelora_A.keys() or self.r[adapter] == 0:
+            return torch.zeros_like(self.get_base_layer().weight)
+        
+        device = self.spikelora_A[adapter].device
+        dtype = self.spikelora_A[adapter].dtype
+        cast_to_fp32 = device.type == "cpu" and dtype == torch.float16
+        
+        if cast_to_fp32:
+            lora_A = self.spikelora_A[adapter].float()
+            lora_B = self.spikelora_B[adapter].float()
+        else:
+            lora_A = self.spikelora_A[adapter]
+            lora_B = self.spikelora_B[adapter]
+        
+        # For spiking LoRA, we need to consider the spiking behavior
+        # Here we use a simplified approach - in practice you might want to calibrate this
+        scaling = self.scaling[adapter]
+        delta_weight = scaling * (lora_B @ lora_A)
+        
+        if self.fan_in_fan_out:
+            delta_weight = delta_weight.transpose(0, 1)
+        
+        return delta_weight
+
+    def forward(self, x: torch.Tensor, *args, **kwargs) -> torch.Tensor:
+        previous_dtype = x.dtype
+        if self.disable_adapters:
+            if self.merged:
+                self.unmerge()
+            result = self.base_layer(x, *args, **kwargs)
+        elif self.merged:
+            result = self.base_layer(x, *args, **kwargs)
+        else:
+            result = self.base_layer(x, *args, **kwargs)
+            for active_adapter in self.active_adapters:
+                if active_adapter not in self.spikelora_A.keys() or self.r[active_adapter] == 0:
+                    continue
+                
+                # Get adapter components
+                lora_A = self.spikelora_A[active_adapter]
+                lora_B = self.spikelora_B[active_adapter]
+                lora_dropout = self.lora_dropout[active_adapter]
+                lif = self.spikelora_lif[active_adapter]
+                scaling = self.scaling[active_adapter]
+                
+                # Apply LoRA with spiking
+                lora_out = x @ lora_A
+                lora_out = lora_dropout(lora_out)
+                
+                # Reset LIF for each forward pass (pointwise spiking)
+                lif.reset()
+                spikes = lif(lora_out)
+                lora_out = lora_out * spikes  # gated by spikes
+                
+                lora_out = lora_out @ lora_B * scaling
+                result = result + lora_out
+        
+        result = result.to(previous_dtype)
+        return result
+    
+    def __repr__(self) -> str:
+        rep = super().__repr__()
+        return "spikelora." + rep

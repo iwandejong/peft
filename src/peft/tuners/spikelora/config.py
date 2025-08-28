@@ -11,4 +11,7 @@ class SpikeLoraConfig(LoraConfig):
     def __init__(self, v_threshold: float = 0.5, **kwargs):
         super().__init__(**kwargs)
         self.v_threshold = v_threshold
+    
+    def __post_init__(self):
+        super().__post_init__()
         self.peft_type = PeftType.SPIKELORA

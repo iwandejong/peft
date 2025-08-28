@@ -1,19 +1,22 @@
 """
-SpikeLoRA Implementation for PEF
+SpikeLoRA Implementation for PEFT
 """
 
 from peft.utils import register_peft_method
 
 from .config import SpikeLoraConfig
-from .layer import SpikeLoraLayer, replace_linear_with_lora
-from .model import SpikeLoraModel, get_peft_model
+from .layer import Linear, SpikeLoraLayer
+from .model import SpikeLoraModel
 
 __all__ = [
+    "Linear",
     "SpikeLoraConfig",
     "SpikeLoraLayer", 
-    "SpikeLoraModel",
-    "get_peft_model",
-    "replace_linear_with_lora"
+    "SpikeLoraModel"
 ]
 
-register_peft_method(name="spikelora", config_cls=SpikeLoraConfig, model_cls=SpikeLoraModel)
+register_peft_method(
+    name="spikelora",
+    config_cls=SpikeLoraConfig,
+    model_cls=SpikeLoraModel
+)
