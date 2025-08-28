@@ -83,7 +83,7 @@ class SpikeLoraLayer(BaseTunerLayer):
         self.spikelora_A[adapter_name] = nn.Parameter(torch.randn(self.in_features, r))
         self.spikelora_B[adapter_name] = nn.Parameter(torch.randn(r, self.out_features))
         self.lora_dropout[adapter_name] = nn.Dropout(lora_dropout) if lora_dropout > 0 else nn.Identity()
-        self.spikelora_lif[adapter_name] = neuron.LIFNode(
+        self.spikelora_lif[adapter_name] = neuron.ParametricLIFNode(
             tau=2.0,
             surrogate_function=surrogate.ATan(alpha=2.0),
             v_threshold=v_threshold,

@@ -199,6 +199,8 @@ class LoraModel(BaseTuner):
             "init_lora_weights": lora_config.init_lora_weights,
             "use_rslora": lora_config.use_rslora,
             "use_dora": lora_config.use_dora,
+            "use_spikelora": lora_config.use_spikelora,
+            "spikelora_v_threshold": lora_config.spikelora_v_threshold,
             "use_qalora": lora_config.use_qalora,
             "qalora_group_size": lora_config.qalora_group_size,
             "ephemeral_gpu_offload": lora_config.runtime_config.ephemeral_gpu_offload,
@@ -235,6 +237,8 @@ class LoraModel(BaseTuner):
                 init_lora_weights=lora_config.init_lora_weights,
                 use_rslora=lora_config.use_rslora,
                 use_dora=lora_config.use_dora,
+                use_spikelora=lora_config.use_spikelora,
+                spikelora_v_threshold=lora_config.spikelora_v_threshold,
                 lora_bias=lora_config.lora_bias,
             )
         else:

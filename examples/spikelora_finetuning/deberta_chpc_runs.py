@@ -7,7 +7,7 @@ from transformers import (
     set_seed,
     DebertaV2Tokenizer
 )
-from peft import SpikeLoraConfig, get_peft_model, LoraConfig
+from peft import get_peft_model, LoraConfig
 import numpy as np
 
 # --- Utility functions ---
@@ -134,11 +134,11 @@ def train_and_eval(task: str, params: dict, seed: int = 42, lora: bool = False) 
         lora_alpha=params["lora_alpha"],
         lora_dropout=params["lora_dropout"],
         target_modules="all-linear",
-        task_type="SEQ_CLS"
+        task_type="SEQ_CLS",
       )
     else:
       print("Using SpikeLoRA")
-      config = SpikeLoraConfig(
+      config = LoraConfig(
         r=params["lora_r"],
         lora_alpha=params["lora_alpha"],
         lora_dropout=params["lora_dropout"],

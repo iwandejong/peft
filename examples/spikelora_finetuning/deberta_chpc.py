@@ -7,7 +7,7 @@ from transformers import (
     set_seed,
     DebertaV2Tokenizer
 )
-from peft import SpikeLoraConfig, get_peft_model
+from peft import LoraConfig, get_peft_model
 import pyhopper as ph
 import numpy as np
 
@@ -152,7 +152,7 @@ def train_and_eval(task: str, params: dict, seed: int = 42):
     )
 
     # Apply SpikeLoRA
-    config = SpikeLoraConfig(
+    config = LoraConfig(
         r=8,
         lora_alpha=16,
         lora_dropout=0.05,
