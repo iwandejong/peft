@@ -43,13 +43,9 @@ class SpikeLoraLinearLayer(nn.Module):
         """
         # Apply dropout and down projection
         down_proj = F.linear(x, lora_A.weight)  # (batch_size, r)
-
-        print(down_proj)
         
         # Apply spiking neuron
         a_spiked = self.lora_lif(down_proj)
-
-        print(a_spiked)
         
         # Track statistics
         self.avg_spikes = a_spiked.float().mean(dim=0)
@@ -59,8 +55,6 @@ class SpikeLoraLinearLayer(nn.Module):
 
         # Scale a_spiked by down_proj to retain learned information (LIF returns 0/1 spikes)
         a_out = down_proj * a_spiked  # (batch_size, r)
-
-        print(a_out)
 
         # Up projection
         lora_result = F.linear(a_out, lora_B.weight) * scaling
