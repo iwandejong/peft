@@ -409,7 +409,8 @@ class SpikeLoraConv2dVariant(SpikeLoraLinearVariant):
         spikelora_layer = SpikeLoraConv2dLayer(fan_in_fan_out=False)
         v_threshold = kwargs.get("spikelora_v_threshold", 1.0)
         
-        spikelora_layer.update_layer(v_threshold==v_threshold)
+        spikelora_layer.update_layer(v_threshold=v_threshold)
+        module.lora_spike_layer[adapter_name] = spikelora_layer
 
 
 class SpikeLoraConv3dVariant(SpikeLoraLinearVariant):

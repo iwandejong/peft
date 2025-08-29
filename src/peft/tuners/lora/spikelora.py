@@ -41,9 +41,14 @@ class SpikeLoraLinearLayer(nn.Module):
         For SpikeLoRA, calculate the extra output from LoRA with spiking applied.
         """
         # Apply lora_A (dropout is performed upstream)
-        down_proj = lora_A(x) # (batch_size, r)
+        down_proj = lora_A(x) # (..., r)
         
         # Apply spiking neuron
+        # Ensure the internal state matches current input shape to avoid shape mismatch across batches
+        if not hasattr(self.lora_lif, "v") or self.lora_lif.v is None or self.lora_lif.v.shape != down_proj.shape:
+            # Reset and reinitialize membrane potential to the correct shape/device/dtype
+            self.lora_lif.reset()
+            self.lora_lif.v = torch.zeros_like(down_proj)
         a_spiked = self.lora_lif(down_proj)
         
         # Track statistics
@@ -51,10 +56,10 @@ class SpikeLoraLinearLayer(nn.Module):
         self.sparsity = (a_spiked == 0).float().mean().item()
 
         # Scale a_spiked by down_proj to retain learned information (LIF returns 0/1 spikes)
-        a_out = a_spiked * down_proj # (batch_size, r)
+        a_out = a_spiked * down_proj # (..., r)
 
         # Up projection
-        lora_result = lora_B(a_out) * scaling # (batch_size, out_features)
+        lora_result = lora_B(a_out) * scaling # (..., out_features)
 
         return base_result + lora_result
 
