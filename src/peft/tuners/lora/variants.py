@@ -326,17 +326,9 @@ class SpikeLoraLinearVariant(LoraVariant):
             module.adapter_layer_names = module.adapter_layer_names[:] + ("lora_spike_layer",)
 
         spikelora_layer = SpikeLoraLinearLayer(fan_in_fan_out=getattr(module, "fan_in_fan_out", False))
-        enable_spike = kwargs.get("use_spikelora", True)
         v_threshold = kwargs.get("spikelora_v_threshold", 1.0)
         
-        spikelora_layer.update_layer(
-            base_layer=module.get_base_layer(),
-            lora_A=None,  # Will be set in forward
-            lora_B=None,  # Will be set in forward
-            scaling=None,  # Will be set in forward
-            enable_spike=enable_spike,
-            v_threshold=v_threshold,
-        )
+        spikelora_layer.update_layer(v_threshold=v_threshold)
         module.lora_spike_layer[adapter_name] = spikelora_layer
 
     @staticmethod
@@ -371,17 +363,9 @@ class SpikeLoraEmbeddingVariant(SpikeLoraLinearVariant):
             module.adapter_layer_names = module.adapter_layer_names[:] + ("lora_spike_layer",)
 
         spikelora_layer = SpikeLoraEmbeddingLayer(fan_in_fan_out=True)
-        enable_spike = kwargs.get("use_spikelora", True)
         v_threshold = kwargs.get("spikelora_v_threshold", 1.0)
         
-        spikelora_layer.update_layer(
-            base_layer=module.get_base_layer(),
-            lora_A=None,  # Will be set in forward
-            lora_B=None,  # Will be set in forward
-            scaling=None,  # Will be set in forward
-            enable_spike=enable_spike,
-            v_threshold=v_threshold,
-        )
+        spikelora_layer.update_layer(v_threshold=v_threshold)
         module.lora_spike_layer[adapter_name] = spikelora_layer
 
     @staticmethod
@@ -409,17 +393,9 @@ class SpikeLoraConv1dVariant(SpikeLoraLinearVariant):
             module.adapter_layer_names = module.adapter_layer_names[:] + ("lora_spike_layer",)
 
         spikelora_layer = SpikeLoraConv1dLayer(fan_in_fan_out=False)
-        enable_spike = kwargs.get("use_spikelora", True)
         v_threshold = kwargs.get("spikelora_v_threshold", 1.0)
         
-        spikelora_layer.update_layer(
-            base_layer=module.get_base_layer(),
-            lora_A=None,  # Will be set in forward
-            lora_B=None,  # Will be set in forward
-            scaling=None,  # Will be set in forward
-            enable_spike=enable_spike,
-            v_threshold=v_threshold,
-        )
+        spikelora_layer.update_layer(v_threshold=v_threshold)
         module.lora_spike_layer[adapter_name] = spikelora_layer
 
 
@@ -431,17 +407,9 @@ class SpikeLoraConv2dVariant(SpikeLoraLinearVariant):
             module.adapter_layer_names = module.adapter_layer_names[:] + ("lora_spike_layer",)
 
         spikelora_layer = SpikeLoraConv2dLayer(fan_in_fan_out=False)
-        enable_spike = kwargs.get("use_spikelora", True)
         v_threshold = kwargs.get("spikelora_v_threshold", 1.0)
         
-        spikelora_layer.update_layer(
-            base_layer=module.get_base_layer(),
-            lora_A=None,  # Will be set in forward
-            lora_B=None,  # Will be set in forward
-            scaling=None,  # Will be set in forward
-            enable_spike=enable_spike,
-            v_threshold=v_threshold,
-        )
+        spikelora_layer.update_layer(v_threshold==v_threshold)
 
 
 class SpikeLoraConv3dVariant(SpikeLoraLinearVariant):
@@ -452,17 +420,9 @@ class SpikeLoraConv3dVariant(SpikeLoraLinearVariant):
             module.adapter_layer_names = module.adapter_layer_names[:] + ("lora_spike_layer",)
 
         spikelora_layer = SpikeLoraConv3dLayer(fan_in_fan_out=False)
-        enable_spike = kwargs.get("use_spikelora", True)
         v_threshold = kwargs.get("spikelora_v_threshold", 1.0)
         
-        spikelora_layer.update_layer(
-            base_layer=module.get_base_layer(),
-            lora_A=None,  # Will be set in forward
-            lora_B=None,  # Will be set in forward
-            scaling=None,  # Will be set in forward
-            enable_spike=enable_spike,
-            v_threshold=v_threshold,
-        )
+        spikelora_layer.update_layer(v_threshold=v_threshold)
 
 
 class QALoraLinearVariant(LoraVariant):

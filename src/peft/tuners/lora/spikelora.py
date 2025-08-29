@@ -26,9 +26,9 @@ class SpikeLoraLinearLayer(nn.Module):
         super().__init__()
         self.fan_in_fan_out = fan_in_fan_out
 
-    def update_layer(self, *, base_layer, lora_A, lora_B, scaling, v_threshold, **kwargs) -> None:
-        self.lora_lif = neuron.ParametricLIFNode(
-            init_tau=2.0, 
+    def update_layer(self, v_threshold) -> None:
+        self.lora_lif = neuron.LIFNode(
+            tau=2.0, 
             surrogate_function=surrogate.ATan(alpha=2.0), 
             v_threshold=v_threshold, 
             detach_reset=True
@@ -36,36 +36,27 @@ class SpikeLoraLinearLayer(nn.Module):
         self.avg_spikes = None
         self.sparsity = None
 
-    def forward(self, x, *, lora_A, lora_B, scaling, base_layer, base_result=None):
+    def forward(self, x, *, lora_A, lora_B, dropout, scaling, base_layer, base_result=None):
         """
-        For SpikeLoRA, calculate the extra output from LoRA with spiking applied. This should be added on top of the base layer
-        output.
+        For SpikeLoRA, calculate the extra output from LoRA with spiking applied.
         """
-        # Apply dropout and down projection
-        down_proj = F.linear(x, lora_A.weight)  # (batch_size, r)
-
-        print(down_proj)
+        # Apply lora_A (dropout is performed upstream)
+        down_proj = lora_A(x) # (batch_size, r)
         
         # Apply spiking neuron
         a_spiked = self.lora_lif(down_proj)
-
-        print(a_spiked)
         
         # Track statistics
         self.avg_spikes = a_spiked.float().mean(dim=0)
         self.sparsity = (a_spiked == 0).float().mean().item()
 
-        print("Sparsity %f" % (self.sparsity * 100))
-
         # Scale a_spiked by down_proj to retain learned information (LIF returns 0/1 spikes)
-        a_out = down_proj * a_spiked  # (batch_size, r)
-
-        print(a_out)
+        a_out = a_spiked * down_proj # (batch_size, r)
 
         # Up projection
-        lora_result = F.linear(a_out, lora_B.weight) * scaling
+        lora_result = lora_B(a_out) * scaling # (batch_size, out_features)
 
-        return lora_result
+        return base_result + lora_result
 
     def reset(self):
         """Reset the spiking neuron state"""
