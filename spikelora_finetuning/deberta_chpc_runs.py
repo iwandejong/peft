@@ -144,6 +144,7 @@ def train_and_eval(task: str, params: dict, seed: int = 42, lora: bool = False) 
         lora_dropout=params["lora_dropout"],
         target_modules="all-linear",
         task_type="SEQ_CLS",
+        use_spikelora=True,
         v_threshold=params["v_threshold"],
       )
   
