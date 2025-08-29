@@ -45,7 +45,8 @@ class SpikeLoraLinearLayer(nn.Module):
         
         # Apply spiking neuron
         # Ensure the internal state matches current input shape to avoid shape mismatch across batches
-        if not hasattr(self.lora_lif, "v") or self.lora_lif.v is None or self.lora_lif.v.shape != down_proj.shape:
+        v_state = getattr(self.lora_lif, "v", None)
+        if (v_state is None) or (not torch.is_tensor(v_state)) or (v_state.shape != down_proj.shape):
             # Reset and reinitialize membrane potential to the correct shape/device/dtype
             self.lora_lif.reset()
             self.lora_lif.v = torch.zeros_like(down_proj)
