@@ -43,14 +43,8 @@ class SpikeLoraLinearLayer(nn.Module):
         # Apply lora_A (dropout is performed upstream)
         down_proj = lora_A(x) # (..., r)
         
-        # Apply spiking neuron
-        # Ensure the internal state matches current input shape to avoid shape mismatch across batches
-        v_state = getattr(self.lora_lif, "v", None)
-        if (v_state is None) or (not torch.is_tensor(v_state)) or (v_state.shape != down_proj.shape):
-            # Reset and reinitialize membrane potential to the correct shape/device/dtype
-            self.lora_lif.reset()
-            self.lora_lif.v = torch.zeros_like(down_proj)
-        a_spiked = self.lora_lif(down_proj)
+        self.lora_lif.reset() # reset state before each forward
+        a_spiked = self.lora_lif(down_proj) # (..., r), 0/1 spikes
         
         # Track statistics
         self.avg_spikes = a_spiked.float().mean(dim=0)
