@@ -249,7 +249,7 @@ def train_and_eval(task: str, params: dict, seed: int = 42, lora: bool = False) 
         return -999.0
 
 # --- Run with param setup ---
-def run(task: str, lora: bool = False, seed: int = 0):
+def run(task: str, lora: bool = False, seed: int = 100):
     from best_params import BEST_PARAMS
     if task not in BEST_PARAMS:
         raise ValueError(f"No best params for task {task}")
@@ -267,6 +267,6 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--task", type=str, default="cola", help="GLUE task name")
     parser.add_argument("--lora", action="store_true", help="Use LoRA instead of SpikeLoRA")
-    parser.add_argument("--seed", type=int, default=0, help="Random seed")
+    parser.add_argument("--seed", type=int, default=100, help="Random seed")
     args = parser.parse_args()
     run(args.task, args.lora, args.seed)
