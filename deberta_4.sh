@@ -28,8 +28,8 @@ source /mnt/lustre/users/idejong/peft/venv/bin/activate
 python3 -c "import torch; print(torch.version.cuda, torch.cuda.is_available())"
 
 TASK=${TASK:-sst2}
-ADD=${ADD:-""}
 LORA=${LORA:-""}
+SEED=${SEED:-0}
 if [ "$LORA" = "true" ] ; then
     LORA="--lora"
 else
@@ -37,6 +37,6 @@ else
 fi
  
 # run 
-echo "Running: python3 examples/spikelora_finetuning/deberta_chpc_runs.py --task $TASK $LORA"
-rm -f ${TASK}_${LORA}_${ADD}_output.log ${TASK}_${LORA}_${ADD}_error.log
-python3 spikelora_finetuning/deberta_chpc.py --task "$TASK" ${LORA} > ${TASK}_${LORA}_${ADD}_output.log 2> ${TASK}_${LORA}_${ADD}_error.log
+echo "Running: python3 examples/spikelora_finetuning/deberta_chpc_runs.py --task $TASK $LORA --seed $SEED"
+rm -f ${TASK}_${LORA}_${SEED}_output.log ${TASK}_${LORA}_${SEED}_error.log
+python3 spikelora_finetuning/deberta_chpc.py --task "$TASK" ${LORA} --seed ${SEED} > ${TASK}_${LORA}_${SEED}_output.log 2> ${TASK}_${LORA}_${SEED}_error.log

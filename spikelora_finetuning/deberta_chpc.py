@@ -249,8 +249,7 @@ def train_and_eval(task: str, params: dict, seed: int = 42, lora: bool = False) 
         return -999.0
 
 # --- Run with param setup ---
-def run(task: str, lora: bool = False):
-    seeds = [100]
+def run(task: str, lora: bool = False, seed: int = 0):
     from best_params import BEST_PARAMS
     if task not in BEST_PARAMS:
         raise ValueError(f"No best params for task {task}")
@@ -258,19 +257,16 @@ def run(task: str, lora: bool = False):
     # params["num_epochs"] *= 3  # run longer
     print(f"Running task {task} with params: {params}")
     scores = []
-    for seed in seeds:
-      print(f"Seed {seed}...")
-      score = train_and_eval(task, params, seed, lora)
-      scores.append(score)
-      print(f"Score for seed {seed}: {score}")
-    score = np.mean(scores)
-    stdev = np.std(scores)
-    print(f"Final score for task {task}: {score} ± {stdev} (n={len(seeds)})")
+    print(f"Seed {seed}...")
+    score = train_and_eval(task, params, seed, lora)
+    scores.append(score)
+    print(f"Score for seed {seed}: {score}")
 
 if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument("--task", type=str, default="cola", help="GLUE task name")
     parser.add_argument("--lora", action="store_true", help="Use LoRA instead of SpikeLoRA")
+    parser.add_argument("--seed", type=int, default=0, help="Random seed")
     args = parser.parse_args()
-    run(args.task, args.lora)
+    run(args.task, args.lora, args.seed)
