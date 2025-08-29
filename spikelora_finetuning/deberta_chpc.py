@@ -250,6 +250,7 @@ def train_and_eval(task: str, params: dict, seed: int = 42, lora: bool = False) 
 
 # --- Run with param setup ---
 def run(task: str, lora: bool = False, seed: int = 100):
+    seeds = [1,2,3,4,5]
     from best_params import BEST_PARAMS
     if task not in BEST_PARAMS:
         raise ValueError(f"No best params for task {task}")
@@ -257,10 +258,14 @@ def run(task: str, lora: bool = False, seed: int = 100):
     # params["num_epochs"] *= 3  # run longer
     print(f"Running task {task} with params: {params}")
     scores = []
-    print(f"Seed {seed}...")
-    score = train_and_eval(task, params, seed, lora)
-    scores.append(score)
-    print(f"Score for seed {seed}: {score}")
+    for seed in seeds:
+      print(f"Seed {seed}...")
+      score = train_and_eval(task, params, seed, lora)
+      scores.append(score)
+      print(f"Score for seed {seed}: {score}")
+    avg_score = sum(scores) / len(scores)
+    stdev = (sum((s - avg_score) ** 2 for s in scores) / len(scores)) ** 0.5
+    print(f"Average score over seeds {seeds}: {avg_score} ± {stdev}")
 
 if __name__ == "__main__":
     import argparse
