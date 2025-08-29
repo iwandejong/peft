@@ -111,8 +111,8 @@ def train_and_eval(task: str, params: dict, seed: int = 42, lora: bool = False) 
     def preprocess(example):
         key1, key2 = TASK_TO_KEYS[task]
         if key2 is None:
-            return tokenizer(example[key1], truncation=True, padding="max_length", max_length=128)
-        return tokenizer(example[key1], example[key2], truncation=True, padding="max_length", max_length=128)
+            return tokenizer(example[key1], truncation=True, padding="max_length", max_length=256)
+        return tokenizer(example[key1], example[key2], truncation=True, padding="max_length", max_length=256)
 
     train_enc = train_ds.map(preprocess, batched=True)
     val_enc = val_ds.map(preprocess, batched=True)
