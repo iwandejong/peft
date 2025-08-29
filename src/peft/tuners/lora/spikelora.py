@@ -36,7 +36,7 @@ class SpikeLoraLinearLayer(nn.Module):
         self.avg_spikes = None
         self.sparsity = None
 
-    def forward(self, x, *, lora_A, lora_B, dropout, scaling, base_layer, base_result=None):
+    def forward(self, x, *, lora_A, lora_B, scaling, base_layer, base_result=None):
         """
         For SpikeLoRA, calculate the extra output from LoRA with spiking applied.
         """
