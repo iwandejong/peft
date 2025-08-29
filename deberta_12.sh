@@ -27,7 +27,15 @@ source /mnt/lustre/users/idejong/peft/venv/bin/activate
 python3 -c "import torch; print(torch.version.cuda, torch.cuda.is_available())"
 
 TASK=${TASK:-sst2}
+ADD=${ADD:-""}
+LORA=${LORA:-""}
+if [ "$LORA" = "true" ] ; then
+    LORA="--lora"
+else
+    LORA=""
+fi
  
 # run 
-rm -f spikelora_output.log spikelora_error.log
-python3 spikelora_finetuning/deberta_chpc.py --task "$TASK" > ${TASK}_output.log 2> ${TASK}_error.log
+echo "Running: python3 examples/spikelora_finetuning/deberta_chpc_runs.py --task $TASK $LORA"
+rm -f ${TASK}_${LORA}_${ADD}_output.log ${TASK}_${LORA}_${ADD}_error.log
+python3 spikelora_finetuning/deberta_chpc_runs.py --task "$TASK" ${LORA} > ${TASK}_${LORA}_${ADD}_output.log 2> ${TASK}_${LORA}_${ADD}_error.log
