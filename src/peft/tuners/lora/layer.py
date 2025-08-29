@@ -103,16 +103,18 @@ class LoraLayer(BaseTunerLayer):
         self._disable_adapters = False
         self.merged_adapters = []
         self.use_dora: dict[str, bool] = {}  # not actively used anymore after #2443, keep it for BC
-        self.use_spikelora: dict[str, bool] = {}  # for SpikeLoRA
-        self.spikelora_v_threshold: dict[str, float] = {}  # for SpikeLoRA
         self.lora_bias: dict[str, bool] = {}
         self.lora_magnitude_vector = torch.nn.ModuleDict()  # for DoRA
-        self.lora_spike_layer = torch.nn.ModuleDict()  # for SpikeLoRA
         self._caches: dict[str, Any] = {}
         self.ephemeral_gpu_offload: bool = ephemeral_gpu_offload
         # flag to enable/disable casting of input to weight dtype during forward call
         self.cast_input_dtype_enabled: bool = True
         self.lora_variant: dict[str, LoraVariant] = {}
+        # For SpikeLoRA 
+        self.use_spikelora: dict[str, bool] = {}
+        self.spikelora_lif = torch.nn.ModuleDict()
+        self.spikelora_v_threshold: dict[str, float] = {}
+        
         self.kwargs = kwargs
 
         base_layer = self.get_base_layer()

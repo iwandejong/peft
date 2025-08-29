@@ -50,9 +50,9 @@ def test_spikelora():
     # Check if SpikeLoRA layers are present
     has_spike_layers = False
     for name, module in peft_model.named_modules():
-        if "lora_spike_layer" in name:
+        if "spikelora_lif" in name:
             has_spike_layers = True
-            print(f"Found SpikeLoRA layer: {name}")
+            print(f"Found SpikeLoRA LIF node: {name}")
             print(f"Module type: {type(module)}")
     
     if has_spike_layers:

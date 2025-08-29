@@ -22,7 +22,7 @@ from torch import nn
 from peft.utils.other import transpose
 
 from .dora import DoraConv1dLayer, DoraConv2dLayer, DoraConv3dLayer, DoraEmbeddingLayer, DoraLinearLayer
-from .spikelora import SpikeLoraConv1dLayer, SpikeLoraConv2dLayer, SpikeLoraConv3dLayer, SpikeLoraEmbeddingLayer, SpikeLoraLinearLayer
+
 from .layer import Conv1d, Conv2d, Conv3d, Embedding, Linear, LoraVariant, _ConvNd
 
 
@@ -321,15 +321,21 @@ class DoraConv3dVariant(_DoraConvNdVariant):
 class SpikeLoraLinearVariant(LoraVariant):
     @staticmethod
     def init(module: Linear, adapter_name: str, **kwargs: Any) -> None:
-        if not module.lora_spike_layer:
-            # first spikelora layer being added, add lora_spike_layer to the list of learnable parameters
-            module.adapter_layer_names = module.adapter_layer_names[:] + ("lora_spike_layer",)
-
-        spikelora_layer = SpikeLoraLinearLayer(fan_in_fan_out=getattr(module, "fan_in_fan_out", False))
+        # Add LIF node directly to the module instead of creating a wrapper layer
+        if not hasattr(module, 'spikelora_lif'):
+            module.adapter_layer_names = module.adapter_layer_names[:] + ("spikelora_lif",)
+            module.spikelora_lif = nn.ModuleDict({})
+        
+        # Create LIF node directly
+        from spikingjelly.clock_driven import neuron, surrogate
         v_threshold = kwargs.get("spikelora_v_threshold", 1.0)
         
-        spikelora_layer.update_layer(v_threshold=v_threshold)
-        module.lora_spike_layer[adapter_name] = spikelora_layer
+        module.spikelora_lif[adapter_name] = neuron.LIFNode(
+            tau=2.0, 
+            surrogate_function=surrogate.ATan(alpha=2.0), 
+            v_threshold=v_threshold, 
+            detach_reset=True
+        )
 
     @staticmethod
     def forward(module: Linear, active_adapter: str, x: torch.Tensor, result: torch.Tensor) -> torch.Tensor:
@@ -337,93 +343,124 @@ class SpikeLoraLinearVariant(LoraVariant):
         lora_B = module.lora_B[active_adapter]
         dropout = module.lora_dropout[active_adapter]
         scaling = module.scaling[active_adapter]
+        lif = module.spikelora_lif[active_adapter]
 
         if isinstance(dropout, nn.Identity) or not module.training:
-            base_result = result
+            x = x
         else:
             x = dropout(x)
-            base_result = None
 
-        lora_result = module.lora_spike_layer[active_adapter](
-            x,
-            lora_A=lora_A,
-            lora_B=lora_B,
-            scaling=scaling,
-            base_layer=module.get_base_layer(),
-            base_result=base_result,
-        )
-        return result + lora_result
+        # Apply LoRA with spiking directly
+        lora_out = lora_A(x)
+        lora_out = dropout(lora_out)
+        
+        # Reset LIF for each forward pass (pointwise spiking)
+        lif.reset()
+        spikes = lif(lora_out)
+        lora_out = lora_out * spikes  # gated by spikes
+        
+        lora_out = lora_B(lora_out) * scaling
+        
+        return result + lora_out
 
 
 class SpikeLoraEmbeddingVariant(SpikeLoraLinearVariant):
     @staticmethod
     def init(module: Embedding, adapter_name: str, **kwargs: Any) -> None:
-        if module.lora_spike_layer is None:
-            # first spikelora layer being added, add lora_spike_layer to the list of learnable parameters
-            module.adapter_layer_names = module.adapter_layer_names[:] + ("lora_spike_layer",)
-
-        spikelora_layer = SpikeLoraEmbeddingLayer(fan_in_fan_out=True)
+        # Add LIF node directly to the module instead of creating a wrapper layer
+        if not hasattr(module, 'spikelora_lif'):
+            module.adapter_layer_names = module.adapter_layer_names[:] + ("spikelora_lif",)
+            module.spikelora_lif = nn.ModuleDict({})
+        
+        # Create LIF node directly
+        from spikingjelly.clock_driven import neuron, surrogate
         v_threshold = kwargs.get("spikelora_v_threshold", 1.0)
         
-        spikelora_layer.update_layer(v_threshold=v_threshold)
-        module.lora_spike_layer[adapter_name] = spikelora_layer
+        module.spikelora_lif[adapter_name] = neuron.LIFNode(
+            tau=2.0, 
+            surrogate_function=surrogate.ATan(alpha=2.0), 
+            v_threshold=v_threshold, 
+            detach_reset=True
+        )
 
     @staticmethod
     def forward(module: Embedding, active_adapter: str, x: torch.Tensor, result: torch.Tensor) -> torch.Tensor:
         lora_embedding_A = module.lora_embedding_A[active_adapter]
         lora_embedding_B = module.lora_embedding_B[active_adapter]
         scaling = module.scaling[active_adapter]
+        lif = module.spikelora_lif[active_adapter]
 
-        lora_result = module.lora_spike_layer[active_adapter](
-            x,
-            lora_A=lora_embedding_A,
-            lora_B=lora_embedding_B,
-            scaling=scaling,
-            base_layer=module.get_base_layer(),
-            embed_fn=module.get_base_layer(),
-        )
-        return result + lora_result
+        # Apply LoRA with spiking directly for embeddings
+        lora_out = lora_embedding_A(x)
+        
+        # Reset LIF for each forward pass (pointwise spiking)
+        lif.reset()
+        spikes = lif(lora_out)
+        lora_out = lora_out * spikes  # gated by spikes
+        
+        lora_out = lora_embedding_B(lora_out) * scaling
+        
+        return result + lora_out
 
 
 class SpikeLoraConv1dVariant(SpikeLoraLinearVariant):
     @staticmethod
     def init(module: Conv1d, adapter_name: str, **kwargs: Any) -> None:
-        if not module.lora_spike_layer:
-            # first spikelora layer being added, add lora_spike_layer to the list of learnable parameters
-            module.adapter_layer_names = module.adapter_layer_names[:] + ("lora_spike_layer",)
-
-        spikelora_layer = SpikeLoraConv1dLayer(fan_in_fan_out=False)
+        # Add LIF node directly to the module instead of creating a wrapper layer
+        if not hasattr(module, 'spikelora_lif'):
+            module.adapter_layer_names = module.adapter_layer_names[:] + ("spikelora_lif",)
+            module.spikelora_lif = nn.ModuleDict({})
+        
+        # Create LIF node directly
+        from spikingjelly.clock_driven import neuron, surrogate
         v_threshold = kwargs.get("spikelora_v_threshold", 1.0)
         
-        spikelora_layer.update_layer(v_threshold=v_threshold)
-        module.lora_spike_layer[adapter_name] = spikelora_layer
+        module.spikelora_lif[adapter_name] = neuron.LIFNode(
+            tau=2.0, 
+            surrogate_function=surrogate.ATan(alpha=2.0), 
+            v_threshold=v_threshold, 
+            detach_reset=True
+        )
 
 
 class SpikeLoraConv2dVariant(SpikeLoraLinearVariant):
     @staticmethod
     def init(module: Conv2d, adapter_name: str, **kwargs: Any) -> None:
-        if not module.lora_spike_layer:
-            # first spikelora layer being added, add lora_spike_layer to the list of learnable parameters
-            module.adapter_layer_names = module.adapter_layer_names[:] + ("lora_spike_layer",)
-
-        spikelora_layer = SpikeLoraConv2dLayer(fan_in_fan_out=False)
+        # Add LIF node directly to the module instead of creating a wrapper layer
+        if not hasattr(module, 'spikelora_lif'):
+            module.adapter_layer_names = module.adapter_layer_names[:] + ("spikelora_lif",)
+            module.spikelora_lif = nn.ModuleDict({})
+        
+        # Create LIF node directly
+        from spikingjelly.clock_driven import neuron, surrogate
         v_threshold = kwargs.get("spikelora_v_threshold", 1.0)
         
-        spikelora_layer.update_layer(v_threshold=v_threshold)
-        module.lora_spike_layer[adapter_name] = spikelora_layer
+        module.spikelora_lif[adapter_name] = neuron.LIFNode(
+            tau=2.0, 
+            surrogate_function=surrogate.ATan(alpha=2.0), 
+            v_threshold=v_threshold, 
+            detach_reset=True
+        )
 
 
 class SpikeLoraConv3dVariant(SpikeLoraLinearVariant):
     @staticmethod
     def init(module: Conv3d, adapter_name: str, **kwargs: Any) -> None:
-        if not module.lora_spike_layer:
-            # first spikelora layer being added, add lora_spike_layer to the list of learnable parameters
-            module.adapter_layer_names = module.adapter_layer_names[:] + ("lora_spike_layer",)
-
-        spikelora_layer = SpikeLoraConv3dLayer(fan_in_fan_out=False)
+        # Add LIF node directly to the module instead of creating a wrapper layer
+        if not hasattr(module, 'spikelora_lif'):
+            module.adapter_layer_names = module.adapter_layer_names[:] + ("spikelora_lif",)
+            module.spikelora_lif = nn.ModuleDict({})
+        
+        # Create LIF node directly
+        from spikingjelly.clock_driven import neuron, surrogate
         v_threshold = kwargs.get("spikelora_v_threshold", 1.0)
         
-        spikelora_layer.update_layer(v_threshold=v_threshold)
+        module.spikelora_lif[adapter_name] = neuron.LIFNode(
+            tau=2.0, 
+            surrogate_function=surrogate.ATan(alpha=2.0), 
+            v_threshold=v_threshold, 
+            detach_reset=True
+        )
 
 
 class QALoraLinearVariant(LoraVariant):
