@@ -32,4 +32,4 @@ TASK=${TASK:-cola}
 
 # run 
 rm -f spikelora_output.log spikelora_error.log
-python3 spikelora_finetuning/deberta_chpc_runs.py --seed "$SEED" --task "$TASK" > ${TASK}_${SEED}_output.log 2> ${TASK}_${SEED}_error.log
+python3 spikelora_finetuning/deberta_chpc.py --seed "$SEED" --task "$TASK" > ${TASK}_${SEED}_output.log 2> ${TASK}_${SEED}_error.log
