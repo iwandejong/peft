@@ -1,5 +1,5 @@
 import time
-from datasets import load_from_disk
+from datasets import load_from_disk, load_dataset
 from transformers import (
     AutoModelForSequenceClassification,
     TrainingArguments,
@@ -13,6 +13,17 @@ import numpy as np
 # --- Utility functions ---
 from sklearn.metrics import accuracy_score, f1_score
 from scipy.stats import pearsonr, spearmanr
+import torch
+
+if torch.backends.mps.is_available():
+    device = torch.device("mps")
+elif torch.cuda.is_available():
+    device = torch.device("cuda")
+else:
+    device = torch.device("cpu")
+
+print(f"Using device: {device}")
+
 
 def get_metric_fn(task):
     if task in ["cola"]:  # Matthew's correlation
@@ -33,8 +44,9 @@ def get_metric_fn(task):
     else:
         raise ValueError(f"Unsupported task {task}")
 
-MODEL_NAME = "./deberta_v3"
-PATH = "/mnt/lustre/users/idejong/peft"
+# MODEL_NAME = "./deberta_v3"
+MODEL_NAME = "microsoft/deberta-v3-base"
+# PATH = "/mnt/lustre/users/idejong/peft"
 
 # helper: pick validation split (handles mnli etc.)
 def get_validation_split(ds):
@@ -84,11 +96,13 @@ def train_and_eval(task: str, params: dict, seed: int = 42, lora: bool = False) 
     set_seed(seed)
 
     # Load dataset & metric
-    dataset = load_from_disk(f"{PATH}/glue_data/{task}")
+    # dataset = load_from_disk(f"{PATH}/glue_data/{task}")
+    dataset = load_dataset("glue", task)
     metric_fn = get_metric_fn(task)
 
     # Model + Tokenizer
-    tokenizer = DebertaV2Tokenizer.from_pretrained(f"{PATH}/deberta_v3")
+    # tokenizer = DebertaV2Tokenizer.from_pretrained(f"{PATH}/deberta_v3")
+    tokenizer = DebertaV2Tokenizer.from_pretrained(MODEL_NAME)
 
     val_split = get_validation_split(dataset)
     train_ds = dataset["train"]
@@ -118,12 +132,13 @@ def train_and_eval(task: str, params: dict, seed: int = 42, lora: bool = False) 
     num_labels = 1 if task == "stsb" else dataset["train"].features["label"].num_classes
 
     model = AutoModelForSequenceClassification.from_pretrained(
-        PATH + "/deberta_v3",
+        # PATH + "/deberta_v3",
+        MODEL_NAME,
         num_labels=num_labels,
         problem_type="regression" if task == "stsb" else None,
         trust_remote_code=True,
         ignore_mismatched_sizes=True,
-    )
+    ).to(device)
 
     # Apply SpikeLoRA
     config = None
@@ -166,7 +181,7 @@ def train_and_eval(task: str, params: dict, seed: int = 42, lora: bool = False) 
         report_to="wandb",
         logging_steps=100,
         run_name=f"spikelora_finetuning_{task}_{int(time.time())}",
-        fp16=True,
+        # fp16=True,
         remove_unused_columns=False,
         warmup_ratio=0.06,
         warmup_steps=0,
@@ -214,9 +229,12 @@ def train_and_eval(task: str, params: dict, seed: int = 42, lora: bool = False) 
         args=training_args,
         train_dataset=train_enc,
         eval_dataset=val_enc,
-        tokenizer=tokenizer,
+        processing_class=tokenizer,
         compute_metrics=compute_metrics,
     )
+
+    print(next(model.parameters()).device)
+
 
     try:
         trainer.train()
