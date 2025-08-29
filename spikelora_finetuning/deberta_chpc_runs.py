@@ -145,7 +145,7 @@ def train_and_eval(task: str, params: dict, seed: int = 42, lora: bool = False) 
         target_modules="all-linear",
         task_type="SEQ_CLS",
         use_spikelora=True,
-        v_threshold=params["v_threshold"],
+        spikelora_v_threshold=params["v_threshold"],
       )
   
     model = get_peft_model(model, config)
