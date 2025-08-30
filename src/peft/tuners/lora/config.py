@@ -511,13 +511,14 @@ class LoraConfig(PeftConfig):
         },
     )
     use_spikelora: bool = field(
-        default=True,
+        default=False,
         metadata={
             "help": (
                 "Enable Spiking Low-Rank Adaptation (SpikeLoRA). This technique applies spiking neurons to the LoRA "
                 "adaptation process, potentially improving efficiency and performance. SpikeLoRA introduces sparsity "
                 "through spiking neuron dynamics while maintaining the benefits of low-rank adaptation. "
-                "Enabled by default."
+                "Disabled by default. "
+                "Requires `spikingjelly`, which can be installed with `pip install spikingjelly`."
             )
         },
     )
@@ -527,6 +528,7 @@ class LoraConfig(PeftConfig):
             "help": (
                 "Voltage threshold for spiking neurons in SpikeLoRA. Controls the spiking behavior and sparsity "
                 "of the adaptation. Only used when `use_spikelora=True`."
+                "Requires `spikingjelly`, which can be installed with `pip install spikingjelly`."
             )
         },
     )
