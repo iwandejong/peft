@@ -5,7 +5,8 @@ from transformers import (
     TrainingArguments,
     Trainer,
     set_seed,
-    DebertaV2Tokenizer
+    DebertaV2Tokenizer,
+    TrainerCallback
 )
 from peft import get_peft_model, LoraConfig
 import numpy as np
@@ -23,20 +24,6 @@ else:
     device = torch.device("cpu")
 
 print(f"Using device: {device}")
-
-def collect_spikelora_stats(model):
-    stats = {}
-    for name, module in model.named_modules():
-        if hasattr(module, "spikelora_lif"):
-            for adapter in module.spikelora_lif:
-                avg_spikes = getattr(module, "avg_spikes", {}).get(adapter, None)
-                sparsity = getattr(module, "sparsity", {}).get(adapter, None)
-                if avg_spikes is not None and sparsity is not None:
-                    stats[f"{name}.{adapter}"] = {
-                        "avg_spikes": avg_spikes,
-                        "sparsity": sparsity
-                    }
-    return stats
 
 def get_metric_fn(task):
     if task in ["cola"]:  # Matthew's correlation
@@ -121,6 +108,11 @@ def train_and_eval(task: str, params: dict, seed: int = 42, lora: bool = False, 
     train_ds = dataset["train"]
     val_ds = dataset[val_split]
 
+    # only use a super small subset for quick testing
+    train_ds = train_ds.select(range(32))
+    val_ds = val_ds.select(range(32))
+    params["num_epochs"] = 3
+
     def preprocess(example):
         key1, key2 = TASK_TO_KEYS[task]
         if key2 is None:
@@ -194,7 +186,7 @@ def train_and_eval(task: str, params: dict, seed: int = 42, lora: bool = False, 
         report_to="wandb",
         logging_steps=100,
         run_name=f"spikelora_finetuning_{task}_{int(time.time())}",
-        fp16=True,
+        # fp16=True,
         remove_unused_columns=False,
         warmup_ratio=0.06,
         warmup_steps=0,
@@ -219,7 +211,7 @@ def train_and_eval(task: str, params: dict, seed: int = 42, lora: bool = False, 
 
     def compute_metrics(eval_pred):
         logits, labels = eval_pred
-        # regression
+        # --- standard task metrics ---
         if task == "stsb":
             preds = np.squeeze(logits)
             pear = safe_corr(labels, preds, pearsonr)
@@ -233,15 +225,24 @@ def train_and_eval(task: str, params: dict, seed: int = 42, lora: bool = False, 
             preds = np.argmax(logits, axis=-1)
             metrics = metric_fn(preds, labels)
 
-        # Add SpikeLoRA stats
-        spikelora_stats = collect_spikelora_stats(model)
-        for k, v in spikelora_stats.items():
-            metrics[f"{k}_avg_spikes"] = v["avg_spikes"]
-            metrics[f"{k}_sparsity"] = v["sparsity"]
+        # --- custom metrics ---
+        sparsity_list = []
+        sparsity_dict = {}
+
+        for name, mod in trainer.model.named_modules():
+            if hasattr(mod, "sparsity"):
+                for adapter, v in mod.sparsity.items():
+                    val = v.mean().item() if isinstance(v, torch.Tensor) else v
+                    sparsity_list.append(val)
+                    sparsity_dict[f"{name}/sparsity"] = val
+
+        # global aggregated metrics
+        metrics["sparsity"] = float(torch.tensor(sparsity_list).mean()) if sparsity_list else 0.0
+
+        # per-adapter metrics
+        metrics.update(sparsity_dict)
 
         return metrics
-
-
     
     import wandb
     wandb.init(mode="offline")

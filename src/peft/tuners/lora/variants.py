@@ -326,9 +326,8 @@ class SpikeLoraLinearVariant(LoraVariant):
             module.adapter_layer_names = module.adapter_layer_names[:] + ("spikelora_lif",)
             module.spikelora_lif = nn.ModuleDict({})
 
-            # logging sparsity and avg_spikes
+            # logging sparsity
             module.sparsity = {}
-            module.avg_spikes = {}
         
         # Create LIF node directly
         from spikingjelly.clock_driven import neuron, surrogate
@@ -362,8 +361,7 @@ class SpikeLoraLinearVariant(LoraVariant):
         lif.reset()
         spikes = lif(lora_out)
         lora_out = lora_out * spikes  # gated by spikes
-        module.avg_spikes[active_adapter] = lif.avg_spikes
-        module.sparsity[active_adapter] = lif.sparsity
+        module.sparsity[active_adapter] = (spikes == 0).float().mean().item()
         
         lora_out = lora_B(lora_out) * scaling
         
@@ -378,9 +376,8 @@ class SpikeLoraEmbeddingVariant(SpikeLoraLinearVariant):
             module.adapter_layer_names = module.adapter_layer_names[:] + ("spikelora_lif",)
             module.spikelora_lif = nn.ModuleDict({})
 
-            # logging sparsity and avg_spikes
+            # logging sparsity
             module.sparsity = {}
-            module.avg_spikes = {}
         
         # Create LIF node directly
         from spikingjelly.clock_driven import neuron, surrogate
@@ -407,8 +404,7 @@ class SpikeLoraEmbeddingVariant(SpikeLoraLinearVariant):
         lif.reset()
         spikes = lif(lora_out)
         lora_out = lora_out * spikes  # gated by spikes
-        module.avg_spikes[active_adapter] = lif.avg_spikes
-        module.sparsity[active_adapter] = lif.sparsity
+        module.sparsity[active_adapter] = (spikes == 0).float().mean().item()
         
         lora_out = lora_embedding_B(lora_out) * scaling
         
@@ -423,9 +419,8 @@ class SpikeLoraConv1dVariant(SpikeLoraLinearVariant):
             module.adapter_layer_names = module.adapter_layer_names[:] + ("spikelora_lif",)
             module.spikelora_lif = nn.ModuleDict({})
 
-            # logging sparsity and avg_spikes
+            # logging sparsity
             module.sparsity = {}
-            module.avg_spikes = {}
         
         # Create LIF node directly
         from spikingjelly.clock_driven import neuron, surrogate
@@ -447,9 +442,8 @@ class SpikeLoraConv2dVariant(SpikeLoraLinearVariant):
             module.adapter_layer_names = module.adapter_layer_names[:] + ("spikelora_lif",)
             module.spikelora_lif = nn.ModuleDict({})
 
-            # logging sparsity and avg_spikes
+            # logging sparsity
             module.sparsity = {}
-            module.avg_spikes = {}
         
         # Create LIF node directly
         from spikingjelly.clock_driven import neuron, surrogate
@@ -471,9 +465,8 @@ class SpikeLoraConv3dVariant(SpikeLoraLinearVariant):
             module.adapter_layer_names = module.adapter_layer_names[:] + ("spikelora_lif",)
             module.spikelora_lif = nn.ModuleDict({})
 
-            # logging sparsity and avg_spikes
+            # logging sparsity
             module.sparsity = {}
-            module.avg_spikes = {}
         
         # Create LIF node directly
         from spikingjelly.clock_driven import neuron, surrogate
