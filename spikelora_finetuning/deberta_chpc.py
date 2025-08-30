@@ -203,7 +203,7 @@ def train_and_eval(task: str, params: dict, seed: int = 42, lora: bool = False, 
         report_to="wandb",
         logging_steps=1,
         run_name=f"{task}-r{rank}-v{v_threshold}-s{seed}{'--lora' if lora else ''}",
-        # fp16=True,
+        fp16=device.type == "cuda",  # use fp16 only on CUDA
         remove_unused_columns=False,
         warmup_ratio=0.06,
         warmup_steps=0,
