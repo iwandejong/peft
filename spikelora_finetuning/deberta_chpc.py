@@ -289,4 +289,4 @@ if __name__ == "__main__":
     parser.add_argument("--rank", type=int, default=8, help="Rank for LoRA/SpikeLoRA")
     parser.add_argument("--v", type=float, default=0.1, help="Voltage threshold for SpikeLoRA")
     args = parser.parse_args()
-    run(args.task, args.lora, args.seed, args.rank, args.v_threshold)
+    run(args.task, args.lora, args.seed, args.rank, args.v)
