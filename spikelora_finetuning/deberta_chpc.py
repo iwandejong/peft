@@ -245,7 +245,7 @@ def train_and_eval(task: str, params: dict, seed: int = 42, lora: bool = False, 
         return metrics
     
     import wandb
-    wandb.init(project="deberta-spikelora", config={**params, "task": task, "seed": seed, "lora": lora, "rank": rank, "v_threshold": v_threshold})
+    wandb.init(project="deberta-spikelora", name =f"{task}-r{rank}-v{v_threshold}-s{seed}{'--lora' if lora else ''}", config={**params, "task": task, "seed": seed, "lora": lora, "rank": rank, "v_threshold": v_threshold})
 
     # log gradients to wandb
     wandb.watch(model, log="all", log_freq=100)
