@@ -24,6 +24,19 @@ else:
 
 print(f"Using device: {device}")
 
+def collect_spikelora_stats(model):
+    stats = {}
+    for name, module in model.named_modules():
+        if hasattr(module, "spikelora_lif"):
+            for adapter in module.spikelora_lif:
+                avg_spikes = getattr(module, "avg_spikes", {}).get(adapter, None)
+                sparsity = getattr(module, "sparsity", {}).get(adapter, None)
+                if avg_spikes is not None and sparsity is not None:
+                    stats[f"{name}.{adapter}"] = {
+                        "avg_spikes": avg_spikes,
+                        "sparsity": sparsity
+                    }
+    return stats
 
 def get_metric_fn(task):
     if task in ["cola"]:  # Matthew's correlation
@@ -92,7 +105,7 @@ TASK_TO_KEYS = {
 }
 
 # --- Train/Eval function ---
-def train_and_eval(task: str, params: dict, seed: int = 42, lora: bool = False) -> float:
+def train_and_eval(task: str, params: dict, seed: int = 42, lora: bool = False, rank: int = 8, v_threshold: float = 0.1) -> float: 
     set_seed(seed)
 
     # Load dataset & metric
@@ -145,8 +158,8 @@ def train_and_eval(task: str, params: dict, seed: int = 42, lora: bool = False) 
     if lora:
       print("Using standard LoRA")
       config =  LoraConfig( 
-        r=params["lora_r"],
-        lora_alpha=params["lora_alpha"],
+        r=rank if rank > 0 else params["lora_r"],
+        lora_alpha=rank, # don't apply scaling
         lora_dropout=params["lora_dropout"],
         target_modules="all-linear",
         task_type="SEQ_CLS",
@@ -154,13 +167,13 @@ def train_and_eval(task: str, params: dict, seed: int = 42, lora: bool = False) 
     else:
       print("Using SpikeLoRA")
       config = LoraConfig(
-        r=params["lora_r"],
-        lora_alpha=params["lora_alpha"],
+        r=rank if rank > 0 else params["lora_r"],
+        lora_alpha=rank, # don't apply scaling
         lora_dropout=params["lora_dropout"],
         target_modules="all-linear",
         task_type="SEQ_CLS",
         use_spikelora=True,
-        spikelora_v_threshold=params["v_threshold"],
+        spikelora_v_threshold=v_threshold if v_threshold >= 0 else params["v_threshold"],
       )
   
     model = get_peft_model(model, config)
@@ -211,14 +224,23 @@ def train_and_eval(task: str, params: dict, seed: int = 42, lora: bool = False) 
             preds = np.squeeze(logits)
             pear = safe_corr(labels, preds, pearsonr)
             spear = safe_corr(labels, preds, spearmanr)
-            return {"pearson": pear, "spearman": spear}
-        if task == "cola": 
+            metrics = {"pearson": pear, "spearman": spear}
+        elif task == "cola": 
             preds = np.argmax(logits, axis=-1)
             mcc = safe_mcc(preds, labels)
-            return {"matthews_correlation": mcc}
-        # classification
-        preds = np.argmax(logits, axis=-1)
-        return metric_fn(preds, labels)
+            metrics = {"matthews_correlation": mcc}
+        else:
+            preds = np.argmax(logits, axis=-1)
+            metrics = metric_fn(preds, labels)
+
+        # Add SpikeLoRA stats
+        spikelora_stats = collect_spikelora_stats(model)
+        for k, v in spikelora_stats.items():
+            metrics[f"{k}_avg_spikes"] = v["avg_spikes"]
+            metrics[f"{k}_sparsity"] = v["sparsity"]
+
+        return metrics
+
 
     
     import wandb
@@ -249,29 +271,22 @@ def train_and_eval(task: str, params: dict, seed: int = 42, lora: bool = False) 
         return -999.0
 
 # --- Run with param setup ---
-def run(task: str, lora: bool = False, seed: int = 100):
-    seeds = [1,2,3,4,5]
+def run(task: str, lora: bool = False, seed: int = 0, rank: int = 8, v_threshold: float = 0.1):
     from best_params import BEST_PARAMS
     if task not in BEST_PARAMS:
         raise ValueError(f"No best params for task {task}")
     params = BEST_PARAMS[task]
     # params["num_epochs"] *= 3  # run longer
     print(f"Running task {task} with params: {params}")
-    scores = []
-    for seed in seeds:
-      print(f"Seed {seed}...")
-      score = train_and_eval(task, params, seed, lora)
-      scores.append(score)
-      print(f"Score for seed {seed}: {score}")
-    avg_score = sum(scores) / len(scores)
-    stdev = (sum((s - avg_score) ** 2 for s in scores) / len(scores)) ** 0.5
-    print(f"Average score over seeds {seeds}: {avg_score} ± {stdev}")
+    score = train_and_eval(task, params, seed, lora, rank, v_threshold)
 
 if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument("--task", type=str, default="cola", help="GLUE task name")
     parser.add_argument("--lora", action="store_true", help="Use LoRA instead of SpikeLoRA")
-    parser.add_argument("--seed", type=int, default=100, help="Random seed")
+    parser.add_argument("--seed", type=int, default=0, help="Random seed")
+    parser.add_argument("--rank", type=int, default=8, help="Rank for LoRA/SpikeLoRA")
+    parser.add_argument("--v", type=float, default=0.1, help="Voltage threshold for SpikeLoRA")
     args = parser.parse_args()
-    run(args.task, args.lora, args.seed)
+    run(args.task, args.lora, args.seed, args.rank, args.v_threshold)
