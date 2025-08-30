@@ -301,6 +301,15 @@ class LoraConfig(PeftConfig):
             ranks. Right now, DoRA only supports linear and Conv2D layers. DoRA introduces a bigger overhead than pure
             LoRA, so it is recommended to merge weights for inference. For more information, see
             https://huggingface.co/papers/2402.09353.
+        use_spikelora (`bool`):
+            Enable Spiking Low-Rank Adaptation (SpikeLoRA). This technique applies spiking neurons to the LoRA
+            adaptation process, potentially improving efficiency and performance. SpikeLoRA introduces sparsity
+            through spiking neuron dynamics while maintaining the benefits of low-rank adaptation. Disabled by default.
+            Requires `spikingjelly`, which can be installed with `pip install spikingjelly`.
+        spikelora_v_threshold (`float`):
+            Voltage threshold for spiking neurons in SpikeLoRA. Controls the spiking behavior and sparsity of the
+            adaptation. Only used when `use_spikelora=True`. Requires `spikingjelly`, which can be installed with
+            `pip install spikingjelly`.
         layer_replication (`List[Tuple[int, int]]`):
             Build a new stack of layers by stacking the original model layers according to the ranges specified. This
             allows expanding (or shrinking) the model without duplicating the base model weights. The new layers will
