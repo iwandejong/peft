@@ -245,7 +245,10 @@ def train_and_eval(task: str, params: dict, seed: int = 42, lora: bool = False, 
         return metrics
     
     import wandb
-    wandb.init(mode="offline")
+    wandb.init(project="deberta-spikelora", config={**params, "task": task, "seed": seed, "lora": lora, "rank": rank, "v_threshold": v_threshold})
+
+    # log gradients to wandb
+    wandb.watch(model, log="all", log_freq=100)
 
     trainer = Trainer(
         model=model,
