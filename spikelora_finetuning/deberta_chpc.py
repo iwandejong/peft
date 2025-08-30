@@ -25,6 +25,23 @@ else:
 
 print(f"Using device: {device}")
 
+import wandb
+
+class SparsityLoggerCallback(TrainerCallback):
+    def on_step_end(self, args, state, control, **kwargs):
+        model = kwargs["model"]
+        sparsity_list = []
+        sparsity_dict = {}
+        for name, mod in model.named_modules():
+            if hasattr(mod, "sparsity"):
+                for adapter, v in mod.sparsity.items():
+                    val = v.mean().item() if isinstance(v, torch.Tensor) else v
+                    sparsity_list.append(val)
+                    sparsity_dict[f"sparsity/{name}"] = val
+
+        global_sparsity = float(torch.tensor(sparsity_list).mean()) if sparsity_list else 0.0
+        wandb.log({"train/global_sparsity": global_sparsity, **sparsity_dict, "step": state.global_step})
+
 def get_metric_fn(task):
     if task in ["cola"]:  # Matthew's correlation
         from sklearn.metrics import matthews_corrcoef
@@ -184,8 +201,8 @@ def train_and_eval(task: str, params: dict, seed: int = 42, lora: bool = False, 
         num_train_epochs=params["num_epochs"],
         save_strategy="no",
         report_to="wandb",
-        logging_steps=100,
-        run_name=f"spikelora_finetuning_{task}_{int(time.time())}",
+        logging_steps=1,
+        run_name=f"{task}-r{rank}-v{v_threshold}-s{seed}{'--lora' if lora else ''}",
         # fp16=True,
         remove_unused_columns=False,
         warmup_ratio=0.06,
@@ -244,11 +261,10 @@ def train_and_eval(task: str, params: dict, seed: int = 42, lora: bool = False, 
 
         return metrics
     
-    import wandb
     wandb.init(project="deberta-spikelora", name =f"{task}-r{rank}-v{v_threshold}-s{seed}{'--lora' if lora else ''}", config={**params, "task": task, "seed": seed, "lora": lora, "rank": rank, "v_threshold": v_threshold})
 
     # log gradients to wandb
-    wandb.watch(model, log="all", log_freq=100)
+    wandb.watch(model, log="all", log_freq=1)
 
     trainer = Trainer(
         model=model,
@@ -257,6 +273,7 @@ def train_and_eval(task: str, params: dict, seed: int = 42, lora: bool = False, 
         eval_dataset=val_enc,
         processing_class=tokenizer,
         compute_metrics=compute_metrics,
+        callbacks=[SparsityLoggerCallback()]
     )
 
     print(next(model.parameters()).device)
