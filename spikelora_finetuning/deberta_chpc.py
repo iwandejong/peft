@@ -125,11 +125,6 @@ def train_and_eval(task: str, params: dict, seed: int = 42, lora: bool = False, 
     train_ds = dataset["train"]
     val_ds = dataset[val_split]
 
-    # only use a super small subset for quick testing
-    train_ds = train_ds.select(range(32))
-    val_ds = val_ds.select(range(32))
-    params["num_epochs"] = 3
-
     def preprocess(example):
         key1, key2 = TASK_TO_KEYS[task]
         if key2 is None:
@@ -201,7 +196,7 @@ def train_and_eval(task: str, params: dict, seed: int = 42, lora: bool = False, 
         num_train_epochs=params["num_epochs"],
         save_strategy="no",
         report_to="wandb",
-        logging_steps=1,
+        logging_steps=100,
         run_name=f"{task}-r{rank}-v{v_threshold}-s{seed}{'--lora' if lora else ''}",
         fp16=device.type == "cuda",  # use fp16 only on CUDA
         remove_unused_columns=False,
@@ -264,7 +259,7 @@ def train_and_eval(task: str, params: dict, seed: int = 42, lora: bool = False, 
     wandb.init(project="deberta-spikelora", name =f"{task}-r{rank}-v{v_threshold}-s{seed}{'--lora' if lora else ''}", config={**params, "task": task, "seed": seed, "lora": lora, "rank": rank, "v_threshold": v_threshold})
 
     # log gradients to wandb
-    wandb.watch(model, log="all", log_freq=1)
+    wandb.watch(model, log="gradients", log_freq=100)
 
     trainer = Trainer(
         model=model,
