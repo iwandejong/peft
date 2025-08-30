@@ -194,7 +194,7 @@ def train_and_eval(task: str, params: dict, seed: int = 42, lora: bool = False, 
         report_to="wandb",
         logging_steps=100,
         run_name=f"spikelora_finetuning_{task}_{int(time.time())}",
-        # fp16=True,
+        fp16=True,
         remove_unused_columns=False,
         warmup_ratio=0.06,
         warmup_steps=0,
@@ -276,9 +276,9 @@ def run(task: str, lora: bool = False, seed: int = 0, rank: int = 8, v_threshold
     if task not in BEST_PARAMS:
         raise ValueError(f"No best params for task {task}")
     params = BEST_PARAMS[task]
-    # params["num_epochs"] *= 3  # run longer
     print(f"Running task {task} with params: {params}")
     score = train_and_eval(task, params, seed, lora, rank, v_threshold)
+    print(f"Task {task} completed with score: {score}")
 
 if __name__ == "__main__":
     import argparse
