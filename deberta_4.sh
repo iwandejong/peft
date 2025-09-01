@@ -35,8 +35,9 @@ if [ "$LORA" = "true" ] ; then
 else
     LORA=""
 fi
+WANDB_PROJECT=${WANDB_PROJECT:-"deberta-spikelora"}
  
 # run 
 echo "Running: python3 examples/spikelora_finetuning/deberta_chpc_runs.py --task $TASK $LORA --seed $SEED"
 rm -f ${TASK}_${LORA}_${SEED}_output.log ${TASK}_${LORA}_${SEED}_error.log
-python3 spikelora_finetuning/deberta_chpc.py --task "$TASK" ${LORA} --seed ${SEED} > ${TASK}_${LORA}_${SEED}_output.log 2> ${TASK}_${LORA}_${SEED}_error.log
+python3 spikelora_finetuning/deberta_chpc.py --task "$TASK" ${LORA} --seed ${SEED} --wandb_project ${WANDB_PROJECT} > ${TASK}_${LORA}_${SEED}_output.log 2> ${TASK}_${LORA}_${SEED}_error.log
