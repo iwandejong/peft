@@ -109,7 +109,7 @@ TASK_TO_KEYS = {
 }
 
 # --- Train/Eval function ---
-def train_and_eval(task: str, params: dict, seed: int = 42, lora: bool = False, rank: int = 8, v_threshold: float = 0.1) -> float: 
+def train_and_eval(task: str, params: dict, seed: int = 42, lora: bool = False, rank: int = 8, v_threshold: float = 0.1, wandb_project: str = "deberta-spikelora") -> float: 
     set_seed(seed)
 
     # Load dataset & metric
@@ -254,7 +254,8 @@ def train_and_eval(task: str, params: dict, seed: int = 42, lora: bool = False, 
 
         return metrics
     
-    wandb.init(project="deberta-spikelora", name =f"{task}-r{rank}-v{v_threshold}-s{seed}{'--lora' if lora else ''}", config={**params, "task": task, "seed": seed, "lora": lora, "rank": rank, "v_threshold": v_threshold})
+    name = f"{task}-r{rank}{f'v{v_threshold}' if not lora else ''}-s{seed}{'--lora' if lora else ''}"
+    wandb.init(project=wandb_project, name=name, config={**params, "task": task, "seed": seed, "lora": lora, "rank": rank, "v_threshold": v_threshold})
 
     # log gradients to wandb
     wandb.watch(model, log="gradients", log_freq=100)
@@ -285,13 +286,13 @@ def train_and_eval(task: str, params: dict, seed: int = 42, lora: bool = False, 
         return -999.0
 
 # --- Run with param setup ---
-def run(task: str, lora: bool = False, seed: int = 0, rank: int = 8, v_threshold: float = 0.1):
+def run(task: str, lora: bool = False, seed: int = 0, rank: int = 8, v_threshold: float = 0.1, wandb_project: str = "deberta-spikelora"):
     from best_params import BEST_PARAMS
     if task not in BEST_PARAMS:
         raise ValueError(f"No best params for task {task}")
     params = BEST_PARAMS[task]
     print(f"Running task {task} with params: {params}")
-    score = train_and_eval(task, params, seed, lora, rank, v_threshold)
+    score = train_and_eval(task, params, seed, lora, rank, v_threshold, wandb_project)
     print(f"Task {task} completed with score: {score}")
 
 if __name__ == "__main__":
@@ -302,5 +303,6 @@ if __name__ == "__main__":
     parser.add_argument("--seed", type=int, default=0, help="Random seed")
     parser.add_argument("--rank", type=int, default=8, help="Rank for LoRA/SpikeLoRA")
     parser.add_argument("--v", type=float, default=0.1, help="Voltage threshold for SpikeLoRA")
+    parser.add_argument("--wandb_project", type=str, default="deberta-spikelora", help="Weights & Biases project name")
     args = parser.parse_args()
-    run(args.task, args.lora, args.seed, args.rank, args.v)
+    run(args.task, args.lora, args.seed, args.rank, args.v, args.wandb_project)
