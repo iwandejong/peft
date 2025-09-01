@@ -200,9 +200,6 @@ def train_and_eval(task: str, params: dict, seed: int = 42, lora: bool = False, 
         run_name=f"{task}-r{rank}-v{v_threshold}-s{seed}{'--lora' if lora else ''}",
         fp16=device.type == "cuda",  # use fp16 only on CUDA
         remove_unused_columns=False,
-        warmup_ratio=0.06,
-        warmup_steps=0,
-        max_grad_norm=0.1,
         metric_for_best_model="accuracy" if task not in ["stsb", "cola"] else "matthews_correlation" if task == "cola" else "pearson",
     )
 
