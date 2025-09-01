@@ -108,6 +108,11 @@ def train_and_eval(task: str, params: dict, seed: int = 42, lora: bool = False) 
     train_ds = dataset["train"]
     val_ds = dataset[val_split]
 
+    # Select subset (for M1)
+    if device.type == "mps":
+        train_ds = train_ds.select(range(10))
+        val_ds = val_ds.select(range(10))
+
     def preprocess(example):
         key1, key2 = TASK_TO_KEYS[task]
         if key2 is None:
@@ -146,7 +151,7 @@ def train_and_eval(task: str, params: dict, seed: int = 42, lora: bool = False) 
       print("Using standard LoRA")
       config =  LoraConfig( 
         r=params["lora_r"],
-        lora_alpha=params["lora_alpha"],
+        lora_alpha=params["lora_r"],
         lora_dropout=params["lora_dropout"],
         target_modules="all-linear",
         task_type="SEQ_CLS",
@@ -155,12 +160,12 @@ def train_and_eval(task: str, params: dict, seed: int = 42, lora: bool = False) 
       print("Using SpikeLoRA")
       config = LoraConfig(
         r=params["lora_r"],
-        lora_alpha=params["lora_alpha"],
+        lora_alpha=params["lora_r"],
         lora_dropout=params["lora_dropout"],
         target_modules="all-linear",
         task_type="SEQ_CLS",
         use_spikelora=True,
-        spikelora_v_threshold=params["v_threshold"],
+        spikelora_v_threshold=0.01
       )
   
     model = get_peft_model(model, config)
