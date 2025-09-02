@@ -34,7 +34,7 @@ RANK=${RANK:-8}
 V=${V:-0.1}
 WANDB_PROJECT=${WANDB_PROJECT:-"chpc"}
 
-if [ "$LORA" == "lora" ]; then
+if [ "$LORA" == "true" ]; then
     echo "Using LoRA"
     LORA_FLAG="--lora"
 else
