@@ -6,3 +6,9 @@ qsub -v TASK=sst2,LORA=true,WANDB_PROJECT=chpc deberta_12.sh -N sst2-lora
 qsub -v TASK=qnli,LORA=true,WANDB_PROJECT=chpc deberta_12.sh -N qnli-lora
 qsub -v TASK=qqp,LORA=true,WANDB_PROJECT=chpc deberta_12.sh -N qqp-lora
 qsub -v TASK=mnli,LORA=true,WANDB_PROJECT=chpc deberta_12.sh -N mnli-lora
+
+# qsub -v TASK=cola,LORA=true,SEED=1,WANDB_PROJECT=chpc deberta_4.sh -N cola-lora
+# qsub -v TASK=cola,LORA=true,SEED=2,WANDB_PROJECT=chpc deberta_4.sh -N cola-lora
+# qsub -v TASK=cola,LORA=true,SEED=3,WANDB_PROJECT=chpc deberta_4.sh -N cola-lora
+# qsub -v TASK=cola,LORA=true,SEED=4,WANDB_PROJECT=chpc deberta_4.sh -N cola-lora
+# qsub -v TASK=cola,LORA=true,SEED=5,WANDB_PROJECT=chpc deberta_4.sh -N cola-lora
