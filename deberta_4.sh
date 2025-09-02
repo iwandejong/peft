@@ -50,7 +50,7 @@ CMD = "python3 deberta_chpc.py \
     --v $V \
     --wandb_project $WANDB_PROJECT"
 echo $CMD
-python3 deberta_chpc.py \
+python3 spikelora_finetuning/deberta_chpc.py \
     --task $TASK \
     $LORA_FLAG \
     --seed $SEED \
