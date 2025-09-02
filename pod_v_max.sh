@@ -1,7 +1,7 @@
 #!/bin/bash
 for TASK in cola
 do
-for SEED in 2 3 4 5
+for SEED in 4 5
 do
 for V in 2.0
 do
