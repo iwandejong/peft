@@ -256,7 +256,7 @@ def train_and_eval(task: str, params: dict, seed: int = 42, lora: bool = False, 
 
         return metrics
     
-    name = f"{task}-r{rank}{f'v{v_threshold}' if not lora else ''}-s{seed}{'--lora' if lora else ''}"
+    name = f"{task}-r{rank}{f'-v{v_threshold}' if not lora else ''}-s{seed}{'--lora' if lora else ''}"
     wandb.init(project=wandb_project, name=name, config={**params, "task": task, "seed": seed, "lora": lora, "rank": rank, "v_threshold": v_threshold})
 
     # log gradients to wandb
