@@ -1,13 +1,21 @@
 #!/bin/bash
 for TASK in cola
 do
-for SEED in 4 5
+for LORA in "--lora" ""
 do
-for V in 2.0
+for SEED in 1 2 3 4 5
 do
-echo "Running: python3 spikelora_finetuning/deberta_chpc.py --task $TASK --seed ${SEED} --v ${V}"
-rm -f ${TASK}_${SEED}_v${V}_output.log ${TASK}_${SEED}_v${V}_error.log
-python3 spikelora_finetuning/deberta_chpc.py --task "$TASK" --seed ${SEED} --v ${V} > ${TASK}_${SEED}_v${V}_output.log 2> ${TASK}_${SEED}_v${V}_error.log
+for V in 1.5
+do
+if [ "$LORA" = "--lora" ]; then
+    echo "Using LoRA"
+    V=-1.0
+else
+    echo "Not using LoRA"
+fi
+echo "Running: python3 spikelora_finetuning/deberta_chpc.py --task $TASK --seed ${SEED} --v ${V} $LORA"
+python3 spikelora_finetuning/deberta_chpc.py --task "$TASK" --seed ${SEED} --v ${V} ${LORA} > ${TASK}${LORA}_${SEED}_v${V}_output.log 2> ${TASK}${LORA}_${SEED}_v${V}_error.log
+done
 done
 done
 done
