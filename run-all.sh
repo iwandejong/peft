@@ -12,3 +12,71 @@ qsub -v TASK=mnli,LORA=true,WANDB_PROJECT=chpc deberta_12.sh -N mnli-lora
 # qsub -v TASK=cola,LORA=true,SEED=3,WANDB_PROJECT=chpc deberta_4.sh -N cola-lora
 # qsub -v TASK=cola,LORA=true,SEED=4,WANDB_PROJECT=chpc deberta_4.sh -N cola-lora
 # qsub -v TASK=cola,LORA=true,SEED=5,WANDB_PROJECT=chpc deberta_4.sh -N cola-lora
+qsub -v TASK=cola,SEED=1,RANK=1 deberta_4.sh -N cola-spike-1 -l walltime=00:30:00
+qsub -v TASK=cola,SEED=2,RANK=1 deberta_4.sh -N cola-spike-1 -l walltime=00:30:00
+qsub -v TASK=cola,SEED=3,RANK=1 deberta_4.sh -N cola-spike-1 -l walltime=00:30:00
+qsub -v TASK=cola,SEED=4,RANK=1 deberta_4.sh -N cola-spike-1 -l walltime=00:30:00
+qsub -v TASK=cola,SEED=5,RANK=1 deberta_4.sh -N cola-spike-1 -l walltime=00:30:00
+qsub -v TASK=cola,SEED=1,RANK=2 deberta_4.sh -N cola-spike-2 -l walltime=01:00:00
+qsub -v TASK=cola,SEED=2,RANK=2 deberta_4.sh -N cola-spike-2 -l walltime=01:00:00
+qsub -v TASK=cola,SEED=3,RANK=2 deberta_4.sh -N cola-spike-2 -l walltime=01:00:00
+
+qsub -v TASK=cola,SEED=4,RANK=2 deberta_4.sh -N cola-spike-2 -l walltime=01:00:00
+qsub -v TASK=cola,SEED=5,RANK=2 deberta_4.sh -N cola-spike-2 -l walltime=01:00:00
+qsub -v TASK=cola,SEED=1,RANK=4 deberta_4.sh -N cola-spike-4 -l walltime=02:00:00
+qsub -v TASK=cola,SEED=2,RANK=4 deberta_4.sh -N cola-spike-4 -l walltime=02:00:00
+qsub -v TASK=cola,SEED=3,RANK=4 deberta_4.sh -N cola-spike-4 -l walltime=02:00:00
+qsub -v TASK=cola,SEED=4,RANK=4 deberta_4.sh -N cola-spike-4 -l walltime=02:00:00
+qsub -v TASK=cola,SEED=5,RANK=4 deberta_4.sh -N cola-spike-4 -l walltime=02:00:00
+qsub -v TASK=cola,SEED=1,RANK=16 deberta_4.sh -N cola-spike-16 -l walltime=06:00:00
+
+qsub -v TASK=cola,SEED=2,RANK=16 deberta_4.sh -N cola-spike-16 -l walltime=06:00:00
+qsub -v TASK=cola,SEED=3,RANK=16 deberta_4.sh -N cola-spike-16 -l walltime=06:00:00
+qsub -v TASK=cola,SEED=4,RANK=16 deberta_4.sh -N cola-spike-16 -l walltime=06:00:00
+qsub -v TASK=cola,SEED=5,RANK=16 deberta_4.sh -N cola-spike-16 -l walltime=06:00:00
+qsub -v TASK=mrpc,SEED=1,RANK=1 deberta_4.sh -N mrpc-spike-1 -l walltime=00:30:00
+qsub -v TASK=mrpc,SEED=2,RANK=1 deberta_4.sh -N mrpc-spike-1 -l walltime=00:30:00
+qsub -v TASK=mrpc,SEED=3,RANK=1 deberta_4.sh -N mrpc-spike-1 -l walltime=00:30:00
+qsub -v TASK=mrpc,SEED=4,RANK=1 deberta_4.sh -N mrpc-spike-1 -l walltime=00:30:00
+
+qsub -v TASK=mrpc,SEED=5,RANK=1 deberta_4.sh -N mrpc-spike-1 -l walltime=00:30:00
+qsub -v TASK=mrpc,SEED=1,RANK=2 deberta_4.sh -N mrpc-spike-2 -l walltime=01:00:00
+qsub -v TASK=mrpc,SEED=2,RANK=2 deberta_4.sh -N mrpc-spike-2 -l walltime=01:00:00
+qsub -v TASK=mrpc,SEED=3,RANK=2 deberta_4.sh -N mrpc-spike-2 -l walltime=01:00:00
+qsub -v TASK=mrpc,SEED=4,RANK=2 deberta_4.sh -N mrpc-spike-2 -l walltime=01:00:00
+qsub -v TASK=mrpc,SEED=5,RANK=2 deberta_4.sh -N mrpc-spike-2 -l walltime=01:00:00
+qsub -v TASK=mrpc,SEED=1,RANK=4 deberta_4.sh -N mrpc-spike-4 -l walltime=02:00:00
+qsub -v TASK=mrpc,SEED=2,RANK=4 deberta_4.sh -N mrpc-spike-4 -l walltime=02:00:00
+
+qsub -v TASK=mrpc,SEED=3,RANK=4 deberta_4.sh -N mrpc-spike-4 -l walltime=02:00:00
+qsub -v TASK=mrpc,SEED=4,RANK=4 deberta_4.sh -N mrpc-spike-4 -l walltime=02:00:00
+qsub -v TASK=mrpc,SEED=5,RANK=4 deberta_4.sh -N mrpc-spike-4 -l walltime=02:00:00
+qsub -v TASK=mrpc,SEED=1,RANK=16 deberta_4.sh -N mrpc-spike-16 -l walltime=06:00:00
+qsub -v TASK=mrpc,SEED=2,RANK=16 deberta_4.sh -N mrpc-spike-16 -l walltime=06:00:00
+qsub -v TASK=mrpc,SEED=3,RANK=16 deberta_4.sh -N mrpc-spike-16 -l walltime=06:00:00
+qsub -v TASK=mrpc,SEED=4,RANK=16 deberta_4.sh -N mrpc-spike-16 -l walltime=06:00:00
+qsub -v TASK=mrpc,SEED=5,RANK=16 deberta_4.sh -N mrpc-spike-16 -l walltime=06:00:00
+
+qsub -v TASK=stsb,SEED=1,RANK=1 deberta_4.sh -N stsb-spike-1 -l walltime=00:30:00
+qsub -v TASK=stsb,SEED=2,RANK=1 deberta_4.sh -N stsb-spike-1 -l walltime=00:30:00
+qsub -v TASK=stsb,SEED=3,RANK=1 deberta_4.sh -N stsb-spike-1 -l walltime=00:30:00
+qsub -v TASK=stsb,SEED=4,RANK=1 deberta_4.sh -N stsb-spike-1 -l walltime=00:30:00
+qsub -v TASK=stsb,SEED=5,RANK=1 deberta_4.sh -N stsb-spike-1 -l walltime=00:30:00
+qsub -v TASK=stsb,SEED=1,RANK=2 deberta_4.sh -N stsb-spike-2 -l walltime=01:00:00
+qsub -v TASK=stsb,SEED=2,RANK=2 deberta_4.sh -N stsb-spike-2 -l walltime=01:00:00
+qsub -v TASK=stsb,SEED=3,RANK=2 deberta_4.sh -N stsb-spike-2 -l walltime=01:00:00
+
+qsub -v TASK=stsb,SEED=4,RANK=2 deberta_4.sh -N stsb-spike-2 -l walltime=01:00:00
+qsub -v TASK=stsb,SEED=5,RANK=2 deberta_4.sh -N stsb-spike-2 -l walltime=01:00:00
+qsub -v TASK=stsb,SEED=1,RANK=4 deberta_4.sh -N stsb-spike-4 -l walltime=02:00:00
+qsub -v TASK=stsb,SEED=2,RANK=4 deberta_4.sh -N stsb-spike-4 -l walltime=02:00:00
+qsub -v TASK=stsb,SEED=3,RANK=4 deberta_4.sh -N stsb-spike-4 -l walltime=02:00:00
+qsub -v TASK=stsb,SEED=4,RANK=4 deberta_4.sh -N stsb-spike-4 -l walltime=02:00:00
+qsub -v TASK=stsb,SEED=5,RANK=4 deberta_4.sh -N stsb-spike-4 -l walltime=02:00:00
+qsub -v TASK=stsb,SEED=1,RANK=16 deberta_4.sh -N stsb-spike-16 -l walltime=06:00:00
+
+qsub -v TASK=stsb,SEED=2,RANK=16 deberta_4.sh -N stsb-spike-16 -l walltime=06:00:00
+qsub -v TASK=stsb,SEED=3,RANK=16 deberta_4.sh -N stsb-spike-16 -l walltime=06:00:00
+qsub -v TASK=stsb,SEED=4,RANK=16 deberta_4.sh -N stsb-spike-16 -l walltime=06:00:00
+qsub -v TASK=stsb,SEED=5,RANK=16 deberta_4.sh -N stsb-spike-16 -l walltime=06:00:00
+

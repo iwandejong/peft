@@ -202,7 +202,8 @@ def train_and_eval(task: str, params: dict, seed: int = 42, lora: bool = False, 
         remove_unused_columns=False,
         warmup_ratio=0.06,
         warmup_steps=0,
-        max_grad_norm=0.1,
+        max_grad_norm=1.0,
+        weight_decay=0.01,
         metric_for_best_model="accuracy" if task not in ["stsb", "cola"] else "matthews_correlation" if task == "cola" else "pearson",
     )
 

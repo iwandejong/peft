@@ -18,33 +18,33 @@
 #   "stsb": {'learning_rate': 0.0005, 'batch_size': 8, 'num_epochs': 5, 'lora_r': 4, 'lora_alpha': 36, 'lora_dropout': 0.18354172790630047, 'v_threshold': 0.5861250082584661}
 # }
 
-BEST_PARAMS = {
-  "cola": {'learning_rate': 1e-4, 'batch_size': 8, 'num_epochs': 20, 'lora_r': 8, 'lora_dropout': 0.0, 'v_threshold': 0.1}, # 4
-  "mrpc": {'learning_rate': 1e-4, 'batch_size': 8, 'num_epochs': 20, 'lora_r': 8, 'lora_dropout': 0.0, 'v_threshold': 0.1}, # 4
-  "stsb": {'learning_rate': 1e-4, 'batch_size': 8, 'num_epochs': 20, 'lora_r': 8, 'lora_dropout': 0.0, 'v_threshold': 0.1}, # 4
-
-  # "wnli": {'learning_rate': 8e-4, 'batch_size': 32, 'num_epochs': 10, 'lora_r': 8, 'lora_alpha': 16, 'lora_dropout': 0.0, 'v_threshold': 0.5}, # 4
-  "sst2": {'learning_rate': 1e-4, 'batch_size': 16, 'num_epochs': 10, 'lora_r': 8, 'lora_dropout': 0.0, 'v_threshold': 0.1}, # 12
-  "qnli": {'learning_rate': 1e-4, 'batch_size': 16, 'num_epochs': 10, 'lora_r': 8, 'lora_dropout': 0.0, 'v_threshold': 0.1}, # 12
-  "mnli": {'learning_rate': 1e-4, 'batch_size': 32, 'num_epochs': 10, 'lora_r': 8, 'lora_dropout': 0.0, 'v_threshold': 0.1}, # 12
-  "qqp": {'learning_rate': 1e-4, 'batch_size': 32, 'num_epochs': 10, 'lora_r': 8, 'lora_dropout': 0.0, 'v_threshold': 0.1}, # 12
-
-  "rte": {'learning_rate': 1e-4, 'batch_size': 32, 'num_epochs': 50, 'lora_r': 8, 'lora_dropout': 0.0, 'v_threshold': 0.1}, # 4
-}
-
 # BEST_PARAMS = {
-#   "cola": {'learning_rate': 5e-4, 'batch_size': 32, 'num_epochs': 25, 'lora_r': 8, 'lora_dropout': 0.0, 'v_threshold': 0.1}, # 4
-#   "mrpc": {'learning_rate': 1e-3, 'batch_size': 32, 'num_epochs': 30, 'lora_r': 8, 'lora_dropout': 0.0, 'v_threshold': 0.1}, # 4
-#   "stsb": {'learning_rate': 2.2e-3, 'batch_size': 32, 'num_epochs': 25, 'lora_r': 8, 'lora_dropout': 0.0, 'v_threshold': 0.1}, # 4
+#   "cola": {'learning_rate': 1e-4, 'batch_size': 8, 'num_epochs': 20, 'lora_r': 8, 'lora_dropout': 0.0, 'v_threshold': 0.1}, # 4
+#   "mrpc": {'learning_rate': 1e-4, 'batch_size': 8, 'num_epochs': 20, 'lora_r': 8, 'lora_dropout': 0.0, 'v_threshold': 0.1}, # 4
+#   "stsb": {'learning_rate': 1e-4, 'batch_size': 8, 'num_epochs': 20, 'lora_r': 8, 'lora_dropout': 0.0, 'v_threshold': 0.1}, # 4
 
 #   # "wnli": {'learning_rate': 8e-4, 'batch_size': 32, 'num_epochs': 10, 'lora_r': 8, 'lora_alpha': 16, 'lora_dropout': 0.0, 'v_threshold': 0.5}, # 4
-#   "sst2": {'learning_rate': 8e-4, 'batch_size': 32, 'num_epochs': 24, 'lora_r': 8, 'lora_dropout': 0.0, 'v_threshold': 0.1}, # 12
-#   "qnli": {'learning_rate': 5e-4, 'batch_size': 32, 'num_epochs': 5, 'lora_r': 8, 'lora_dropout': 0.0, 'v_threshold': 0.1}, # 12
-#   "mnli": {'learning_rate': 5e-4, 'batch_size': 32, 'num_epochs': 7, 'lora_r': 8, 'lora_dropout': 0.0, 'v_threshold': 0.1}, # 12
-#   "qqp": {'learning_rate': 5e-4, 'batch_size': 32, 'num_epochs': 10, 'lora_r': 8, 'lora_dropout': 0.0, 'v_threshold': 0.1}, # 12
+#   "sst2": {'learning_rate': 1e-4, 'batch_size': 16, 'num_epochs': 10, 'lora_r': 8, 'lora_dropout': 0.0, 'v_threshold': 0.1}, # 12
+#   "qnli": {'learning_rate': 1e-4, 'batch_size': 16, 'num_epochs': 10, 'lora_r': 8, 'lora_dropout': 0.0, 'v_threshold': 0.1}, # 12
+#   "mnli": {'learning_rate': 1e-4, 'batch_size': 32, 'num_epochs': 10, 'lora_r': 8, 'lora_dropout': 0.0, 'v_threshold': 0.1}, # 12
+#   "qqp": {'learning_rate': 1e-4, 'batch_size': 32, 'num_epochs': 10, 'lora_r': 8, 'lora_dropout': 0.0, 'v_threshold': 0.1}, # 12
 
-#   "rte": {'learning_rate': 1.2e-3, 'batch_size': 32, 'num_epochs': 50, 'lora_r': 8, 'lora_dropout': 0.0, 'v_threshold': 0.1}, # 4
+#   "rte": {'learning_rate': 1e-4, 'batch_size': 32, 'num_epochs': 50, 'lora_r': 8, 'lora_dropout': 0.0, 'v_threshold': 0.1}, # 4
 # }
+
+BEST_PARAMS = {
+  "cola": {'learning_rate': 5e-4, 'batch_size': 32, 'num_epochs': 25, 'lora_r': 8, 'lora_dropout': 0.0, 'v_threshold': 0.1}, # 4
+  "mrpc": {'learning_rate': 1e-3, 'batch_size': 32, 'num_epochs': 30, 'lora_r': 8, 'lora_dropout': 0.0, 'v_threshold': 0.1}, # 4
+  "stsb": {'learning_rate': 2.2e-3, 'batch_size': 32, 'num_epochs': 25, 'lora_r': 8, 'lora_dropout': 0.0, 'v_threshold': 0.1}, # 4
+
+  # "wnli": {'learning_rate': 8e-4, 'batch_size': 32, 'num_epochs': 10, 'lora_r': 8, 'lora_alpha': 16, 'lora_dropout': 0.0, 'v_threshold': 0.5}, # 4
+  "sst2": {'learning_rate': 8e-4, 'batch_size': 32, 'num_epochs': 24, 'lora_r': 8, 'lora_dropout': 0.0, 'v_threshold': 0.1}, # 12
+  "qnli": {'learning_rate': 5e-4, 'batch_size': 32, 'num_epochs': 5, 'lora_r': 8, 'lora_dropout': 0.0, 'v_threshold': 0.1}, # 12
+  "mnli": {'learning_rate': 5e-4, 'batch_size': 32, 'num_epochs': 7, 'lora_r': 8, 'lora_dropout': 0.0, 'v_threshold': 0.1}, # 12
+  "qqp": {'learning_rate': 5e-4, 'batch_size': 32, 'num_epochs': 10, 'lora_r': 8, 'lora_dropout': 0.0, 'v_threshold': 0.1}, # 12
+
+  "rte": {'learning_rate': 1.2e-3, 'batch_size': 32, 'num_epochs': 50, 'lora_r': 8, 'lora_dropout': 0.0, 'v_threshold': 0.1}, # 4
+}
 
 # max hours per task:
 MAX_HOURS = {
