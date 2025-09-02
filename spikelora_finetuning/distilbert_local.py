@@ -113,7 +113,6 @@ TASK_TO_KEYS = {
 
 # --- Train/Eval function ---
 def train_and_eval(**params) -> float:
-    print("Params:", params)
     set_seed(params["seed"])
 
     # Load dataset & metric
@@ -322,9 +321,10 @@ if __name__ == "__main__":
     seeds = [1,2,3,4,5]
     sparsity = []
     scores = []
+    experiment = params["experiment"]
     for seed in seeds:
         params["seed"] = seed
-        params["experiment"] = f"{args.experiment}_seed{seed}"
+        params["experiment"] = f"{experiment}-seed{seed}"
         print(f"Running with params: {params}")
         score, sparsity = train_and_eval(**params)
         scores.append(score)
