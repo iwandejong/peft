@@ -165,7 +165,8 @@ def train_and_eval(**params) -> float:
     ).to(device)
 
     # print model
-    target_modules=["q_lin", "v_lin", "out_lin", "lin1", "lin2"]
+    # target_modules=["q_lin", "v_lin", "out_lin", "lin1", "lin2"]
+    target_modules=["q_lin", "v_lin"]
 
     # Apply SpikeLoRA
     config = None
@@ -228,7 +229,7 @@ def train_and_eval(**params) -> float:
         mcc = matthews_corrcoef(labels, preds)
         return 0.0 if np.isnan(mcc) else mcc
 
-
+    global_sparsity = []
     def compute_metrics(eval_pred):
         logits, labels = eval_pred
         # --- standard task metrics ---
@@ -258,6 +259,7 @@ def train_and_eval(**params) -> float:
 
         # global aggregated metrics
         metrics["sparsity"] = float(torch.tensor(sparsity_list).mean()) if sparsity_list else 0.0
+        global_sparsity.append(metrics["sparsity"])
 
         # per-adapter metrics
         metrics.update(sparsity_dict)
@@ -282,12 +284,14 @@ def train_and_eval(**params) -> float:
     print(next(model.parameters()).device)
 
 
+
     try:
         trainer.train()
         metrics = trainer.evaluate()
         main_score = pick_main_score(metrics)
         wandb.finish()
-        return float(main_score) if main_score is not None else -999.0
+        avg_sparsity = float(torch.tensor(global_sparsity).mean()) if global_sparsity else 0.0
+        return float(main_score) if main_score is not None else -999.0, avg_sparsity
     except Exception as e:
         print(f"[train_and_eval] failed for params={params}: {e}")
         import traceback
@@ -312,23 +316,25 @@ if __name__ == "__main__":
     # Add extra parameters
     params["learning_rate"] = 1.2e-3
     params["batch_size"] = 32
-    params["num_epochs"] = 10
+    params["num_epochs"] = 20
 
     # Setup seeds
     seeds = [1,2,3,4,5]
+    sparsity = []
     scores = []
     for seed in seeds:
         params["seed"] = seed
         params["experiment"] = f"{args.experiment}_seed{seed}"
         print(f"Running with params: {params}")
-        score = train_and_eval(**params)
+        score, sparsity = train_and_eval(**params)
         scores.append(score)
-        print(f"Score for seed {seed}: {score}")
+        sparsity.append(sparsity)
+        print(f"Score for seed {seed}: {score} (sparsity: {sparsity})")
     
     # Final results
     score = np.mean(scores)
     stdev = np.std(scores)
-    print(f"Final score for {args.experiment} experiment: {score} ± {stdev} (n={len(seeds)})")
+    print(f"Final score for {args.experiment} experiment: {score} ± {stdev} (n={len(seeds)}) with average sparsity {np.mean(sparsity)}")
 
 
 
