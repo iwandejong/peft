@@ -27,17 +27,33 @@ source /mnt/lustre/users/idejong/peft/venv/bin/activate
 # Check CUDA version and availability
 python3 -c "import torch; print(torch.version.cuda, torch.cuda.is_available())"
 
-TASK=${TASK:-sst2}
+TASK=${TASK:-"cola"}
 LORA=${LORA:-""}
 SEED=${SEED:-0}
-if [ "$LORA" = "true" ] ; then
-    LORA="--lora"
+RANK=${RANK:-8}
+V=${V:-0.1}
+WANDB_PROJECT=${WANDB_PROJECT:-"chpc"}
+
+if [ "$LORA" == "lora" ]; then
+    echo "Using LoRA"
+    LORA_FLAG="--lora"
 else
-    LORA=""
+    echo "Using SpikeLoRA"
+    LORA_FLAG=""
 fi
-WANDB_PROJECT=${WANDB_PROJECT:-"deberta-spikelora"}
- 
-# run 
-echo "Running: python3 examples/spikelora_finetuning/deberta_chpc_runs.py --task $TASK $LORA --seed $SEED --wandb_project ${WANDB_PROJECT}"
-rm -f ${TASK}_${LORA}_${SEED}_output.log ${TASK}_${LORA}_${SEED}_error.log
-python3 spikelora_finetuning/deberta_chpc.py --task "$TASK" ${LORA} --seed ${SEED} --wandb_project "${WANDB_PROJECT}" > ${TASK}_${LORA}_${SEED}_output.log 2> ${TASK}_${LORA}_${SEED}_error.log
+
+CMD = "python3 deberta_chpc.py \
+    --task $TASK \
+    $LORA_FLAG \
+    --seed $SEED \
+    --rank $RANK \
+    --v $V \
+    --wandb_project $WANDB_PROJECT"
+echo $CMD
+python3 deberta_chpc.py \
+    --task $TASK \
+    $LORA_FLAG \
+    --seed $SEED \
+    --rank $RANK \
+    --v $V \
+    --wandb_project $WANDB_PROJECT > deberta_${TASK}_${LORA}_r${RANK}_v${V}_s${SEED}.log 2>&1
