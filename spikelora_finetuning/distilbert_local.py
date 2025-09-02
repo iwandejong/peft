@@ -315,11 +315,11 @@ if __name__ == "__main__":
     # Add extra parameters
     params["learning_rate"] = 1.2e-3
     params["batch_size"] = 32
-    params["num_epochs"] = 20
+    params["num_epochs"] = 5
 
     # Setup seeds
     seeds = [1,2,3,4,5]
-    sparsity = []
+    sparsities = []
     scores = []
     experiment = params["experiment"]
     for seed in seeds:
@@ -328,13 +328,13 @@ if __name__ == "__main__":
         print(f"Running with params: {params}")
         score, sparsity = train_and_eval(**params)
         scores.append(score)
-        sparsity.append(sparsity)
-        print(f"Score for seed {seed}: {score} (sparsity: {sparsity})")
+        sparsities.append(sparsity)
+        print(f"Score for seed {seed}: {score} (sparsity: {sparsities})")
     
     # Final results
     score = np.mean(scores)
     stdev = np.std(scores)
-    print(f"Final score for {args.experiment} experiment: {score} ± {stdev} (n={len(seeds)}) with average sparsity {np.mean(sparsity)}")
+    print(f"Final score for {args.experiment} experiment: {score} ± {stdev} (n={len(seeds)}) with average sparsity {np.mean(sparsities)}")
 
 
 
