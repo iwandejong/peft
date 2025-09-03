@@ -323,7 +323,7 @@ def train_and_eval(**params) -> float:
         # Save to CSV
         import pandas as pd
         submission = pd.DataFrame({"index": range(len(preds)), "label": preds})
-        submission.to_csv(f"{params["experiment"]}_submission.csv", index=False)
+        submission.to_csv(f"{params['experiment']}_submission.csv", index=False)
 
         avg_sparsity = float(torch.tensor(global_sparsity).mean()) if global_sparsity else 0.0
         return float(main_score) if main_score is not None else -999.0, float(avg_sparsity)
