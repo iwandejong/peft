@@ -44,6 +44,7 @@ class AdaLoraLayer(LoraLayer):
         self.lora_A = nn.ParameterDict({})
         self.lora_B = nn.ParameterDict({})
         self.ranknum = nn.ParameterDict({})
+        self.spikelora_lif = nn.ModuleDict({})
 
     def update_layer(self, adapter_name, r, lora_alpha, lora_dropout, init_lora_weights):
         if r < 0:
@@ -70,6 +71,15 @@ class AdaLoraLayer(LoraLayer):
         self.ranknum[adapter_name].data.fill_(float(r))
         self.ranknum[adapter_name].requires_grad = False
         self.scaling[adapter_name] = lora_alpha if lora_alpha > 0 else float(r)
+        # SpikeLoRA
+        from spikingjelly.activation_based import neuron, surrogate
+        self.spikelora_lif[adapter_name] = neuron.LIFNode(
+            tau=2.0, 
+            surrogate_function=surrogate.ATan(alpha=2.0), 
+            v_threshold=1.0, 
+            detach_reset=True
+        )
+
         if init_lora_weights:
             self.reset_lora_parameters(adapter_name)
 
@@ -181,7 +191,12 @@ class SVDLinear(nn.Module, AdaLoraLayer):
                 ranknum = self.ranknum[active_adapter] + 1e-5
 
                 x = self._cast_input_dtype(x, lora_A.dtype)
-                result += (dropout(x) @ (lora_A * lora_E).T @ lora_B.T) * scaling / ranknum
+                lora_out = dropout(x) @ (lora_A * lora_E).T
+                if self.spikelora_lif[active_adapter]:
+                    lif = self.spikelora_lif[active_adapter]
+                    spikes = lif(lora_out)
+                    lora_out = lora_out * spikes
+                result += (lora_out @ lora_B.T) * scaling / ranknum
 
         return result
 

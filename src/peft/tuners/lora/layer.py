@@ -199,7 +199,7 @@ class LoraLayer(BaseTunerLayer):
         init_lora_weights,
         use_rslora,
         use_dora: bool = False,
-        use_spikelora: bool = True,
+        use_spikelora: bool = False,
         spikelora_v_threshold: float = 1.0,
         use_qalora: bool = False,
         lora_bias: bool = False,

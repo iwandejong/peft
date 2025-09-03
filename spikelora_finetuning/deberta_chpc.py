@@ -109,13 +109,13 @@ TASK_TO_KEYS = {
 }
 
 # --- Train/Eval function ---
-def train_and_eval(task: str, params: dict, seed: int = 42, lora: bool = False, rank: int = 8, v_threshold: float = 0.1, wandb_project: str = "deberta-spikelora") -> float: 
-    set_seed(seed)
+def train_and_eval(**params) -> float: 
+    set_seed(params["seed"])
 
     # Load dataset & metric
     # dataset = load_from_disk(f"{PATH}/glue_data/{task}")
-    dataset = load_dataset("glue", task)
-    metric_fn = get_metric_fn(task)
+    dataset = load_dataset("glue", params["task"])
+    metric_fn = get_metric_fn(params["task"])
 
     # Model + Tokenizer
     # tokenizer = DebertaV2Tokenizer.from_pretrained(f"{PATH}/deberta_v3")
@@ -126,7 +126,7 @@ def train_and_eval(task: str, params: dict, seed: int = 42, lora: bool = False, 
     val_ds = dataset[val_split]
 
     def preprocess(example):
-        key1, key2 = TASK_TO_KEYS[task]
+        key1, key2 = TASK_TO_KEYS[params["task"]]
         if key2 is None:
             return tokenizer(example[key1], truncation=True, padding="max_length", max_length=256)
         return tokenizer(example[key1], example[key2], truncation=True, padding="max_length", max_length=256)
@@ -146,38 +146,60 @@ def train_and_eval(task: str, params: dict, seed: int = 42, lora: bool = False, 
     val_enc.set_format(type="torch", columns=cols)
 
     # Load model (let Trainer handle device placement / fp16)
-    num_labels = 1 if task == "stsb" else dataset["train"].features["label"].num_classes
+    num_labels = 1 if params["task"] == "stsb" else dataset["train"].features["label"].num_classes
 
     model = AutoModelForSequenceClassification.from_pretrained(
         # PATH + "/deberta_v3",
         MODEL_NAME,
         num_labels=num_labels,
-        problem_type="regression" if task == "stsb" else None,
+        problem_type="regression" if params["task"] == "stsb" else None,
         trust_remote_code=True,
         ignore_mismatched_sizes=True,
     ).to(device)
 
     # Apply SpikeLoRA
     config = None
-    if lora:
+    if params["lora"]:
       print("Using standard LoRA")
       config =  LoraConfig( 
-        r=rank if rank > 0 else params["lora_r"],
-        lora_alpha=rank, # don't apply scaling
+        r=params["lora_r"],
+        lora_alpha=params["lora_r"],
         lora_dropout=params["lora_dropout"],
         target_modules="all-linear",
         task_type="SEQ_CLS",
+        use_rslora=True
+      )
+    elif params["adalora"]:
+      print("Using AdaLoRA")
+      from peft import AdaLoraConfig
+      config = AdaLoraConfig(
+        lora_alpha=params["rank"],
+        target_r=params["rank"],
+        init_r=min(2, params["rank"]),
+        tinit=0,
+        tfinal=0,
+        deltaT=1,
+        beta1=0.85,
+        beta2=0.85,
+        orth_reg_weight=0.5,
+        total_step=params["num_epochs"] * (len(train_enc) // params["batch_size"]),
+        rank_pattern=None,
+        target_modules="all-linear",
+        task_type="SEQ_CLS",
+        use_spikelora=True,
+        use_rslora=True,
       )
     else:
       print("Using SpikeLoRA")
       config = LoraConfig(
-        r=rank if rank > 0 else params["lora_r"],
-        lora_alpha=rank, # don't apply scaling
+        r=params["lora_r"],
+        lora_alpha=params["lora_r"],
         lora_dropout=params["lora_dropout"],
         target_modules="all-linear",
         task_type="SEQ_CLS",
         use_spikelora=True,
-        spikelora_v_threshold=v_threshold if v_threshold >= 0 else params["v_threshold"],
+        use_rslora=True,
+        spikelora_v_threshold=params["v_threshold"],
       )
   
     model = get_peft_model(model, config)
@@ -197,14 +219,14 @@ def train_and_eval(task: str, params: dict, seed: int = 42, lora: bool = False, 
         save_strategy="no",
         report_to="wandb",
         logging_steps=100,
-        run_name=f"{task}-r{rank}-v{v_threshold}-s{seed}{'--lora' if lora else ''}",
-        fp16=device.type == "cuda",  # use fp16 only on CUDA
+        run_name=params["experiment"],
+        fp16=device.type == "cuda", # use fp16 only on CUDA
         remove_unused_columns=False,
         warmup_ratio=0.06,
         warmup_steps=0,
         max_grad_norm=1.0,
         weight_decay=0.01,
-        metric_for_best_model="accuracy" if task not in ["stsb", "cola"] else "matthews_correlation" if task == "cola" else "pearson",
+        metric_for_best_model="accuracy" if params["task"] not in ["stsb", "cola"] else "matthews_correlation" if params["task"] == "cola" else "pearson",
     )
 
     def safe_corr(x, y, corr_fn):
@@ -225,12 +247,12 @@ def train_and_eval(task: str, params: dict, seed: int = 42, lora: bool = False, 
     def compute_metrics(eval_pred):
         logits, labels = eval_pred
         # --- standard task metrics ---
-        if task == "stsb":
+        if params["task"] == "stsb":
             preds = np.squeeze(logits)
             pear = safe_corr(labels, preds, pearsonr)
             spear = safe_corr(labels, preds, spearmanr)
             metrics = {"pearson": pear, "spearman": spear}
-        elif task == "cola": 
+        elif params["task"] == "cola": 
             preds = np.argmax(logits, axis=-1)
             mcc = safe_mcc(preds, labels)
             metrics = {"matthews_correlation": mcc}
@@ -257,8 +279,7 @@ def train_and_eval(task: str, params: dict, seed: int = 42, lora: bool = False, 
 
         return metrics
     
-    name = f"{task}-r{rank}{f'-v{v_threshold}' if not lora else ''}-s{seed}{'--lora' if lora else ''}"
-    wandb.init(project=wandb_project, name=name, config={**params, "task": task, "seed": seed, "lora": lora, "rank": rank, "v_threshold": v_threshold})
+    wandb.init(project="glue", name=params["experiment"], config=params)
 
     # log gradients to wandb
     wandb.watch(model, log="gradients", log_freq=100)
@@ -289,23 +310,41 @@ def train_and_eval(task: str, params: dict, seed: int = 42, lora: bool = False, 
         return -999.0
 
 # --- Run with param setup ---
-def run(task: str, lora: bool = False, seed: int = 0, rank: int = 8, v_threshold: float = 0.1, wandb_project: str = "deberta-spikelora"):
-    from best_params import BEST_PARAMS
-    if task not in BEST_PARAMS:
-        raise ValueError(f"No best params for task {task}")
-    params = BEST_PARAMS[task]
-    print(f"Running task {task} with params: {params}")
-    score = train_and_eval(task, params, seed, lora, rank, v_threshold, wandb_project)
-    print(f"Task {task} completed with score: {score}")
-
 if __name__ == "__main__":
     import argparse
+    from best_params import BEST_PARAMS
+
     parser = argparse.ArgumentParser()
-    parser.add_argument("--task", type=str, default="cola", help="GLUE task name")
+    parser.add_argument("--task", type=str, default="rte", help="GLUE task name")
     parser.add_argument("--lora", action="store_true", help="Use LoRA instead of SpikeLoRA")
-    parser.add_argument("--seed", type=int, default=0, help="Random seed")
-    parser.add_argument("--rank", type=int, default=8, help="Rank for LoRA/SpikeLoRA")
-    parser.add_argument("--v", type=float, default=0.1, help="Voltage threshold for SpikeLoRA")
-    parser.add_argument("--wandb_project", type=str, default="deberta-spikelora", help="Weights & Biases project name")
+    parser.add_argument("--adalora", action="store_true", help="Use AdaLoRA instead of SpikeLoRA")
     args = parser.parse_args()
-    run(args.task, args.lora, args.seed, args.rank, args.v, args.wandb_project)
+
+    # Convert args Namespace to dict
+    params = vars(args)
+
+    # Add extra parameters
+    params["rank"] = BEST_PARAMS[params["task"]]["lora_r"]
+    params["dropout"] = BEST_PARAMS[params["task"]]["lora_dropout"]
+    params["v_threshold"] = BEST_PARAMS[params["task"]]["v_threshold"]
+    params["learning_rate"] = BEST_PARAMS[params["task"]]["learning_rate"]
+    params["batch_size"] = BEST_PARAMS[params["task"]]["batch_size"]
+    params["num_epochs"] = BEST_PARAMS[params["task"]]["num_epochs"]
+
+    # Setup seeds
+    seeds = [1,2,3,4,5]
+    sparsities = []
+    scores = []
+    for seed in seeds:
+        params["seed"] = seed
+        params["experiment"] = f"{args.task}-r{args.rank}-v{args.v}{'--lora' if args.lora else ''}{'--adalora' if args.adalora else ''}-s{seed}"
+        print(f"Running with params: {params}")
+        score, sparsity = train_and_eval(**params)
+        scores.append(score)
+        sparsities.append(sparsity)
+        print(f"Score for seed {seed}: {score} (sparsity: {sparsities})")
+    
+    # Final results
+    score = np.mean(scores)
+    stdev = np.std(scores)
+    print(f"Final score for {args.experiment} experiment: {score} ± {stdev} (n={len(seeds)}) with average sparsity {np.mean(sparsities)}")

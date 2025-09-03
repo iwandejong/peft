@@ -173,27 +173,51 @@ def train_and_eval(**params) -> float:
       print("Using standard LoRA")
       config =  LoraConfig( 
         r=params["rank"],
-        lora_alpha=params["rank"], # don't apply scaling
+        lora_alpha=params["rank"], # use r as alpha
         lora_dropout=params["dropout"],
         target_modules=target_modules,
         task_type="SEQ_CLS",
+        use_rslora=True,
+      )
+    elif params["adalora"]:
+      print("Using AdaLoRA")
+      from peft import AdaLoraConfig
+      config = AdaLoraConfig(
+        lora_alpha=params["rank"],
+        target_r=params["rank"],
+        init_r=min(2, params["rank"]),
+        tinit=0,
+        tfinal=0,
+        deltaT=1,
+        beta1=0.85,
+        beta2=0.85,
+        orth_reg_weight=0.5,
+        total_step=params["num_epochs"] * (len(train_enc) // params["batch_size"]),
+        rank_pattern=None,
+        target_modules=target_modules,
+        task_type="SEQ_CLS",
+        use_spikelora=True,
+        spikelora_v_threshold=params["v"],
+        use_rslora=True,
       )
     else:
       print("Using SpikeLoRA")
       config = LoraConfig(
         r=params["rank"],
-        lora_alpha=params["rank"], # don't apply scaling
+        lora_alpha=params["rank"],
         lora_dropout=params["dropout"],
         target_modules=target_modules,
         task_type="SEQ_CLS",
         use_spikelora=True,
-        spikelora_v_threshold=params["v"]
+        spikelora_v_threshold=params["v"],
+        use_rslora=True
       )
   
     model = get_peft_model(model, config)
 
     # print model type and number of trainable params
     model.print_trainable_parameters()
+    print("Wrapped model:", model)
 
     # Trainer setup
     training_args = TrainingArguments(
@@ -303,9 +327,10 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--task", type=str, default="rte", help="GLUE task name")
     parser.add_argument("--lora", action="store_true", help="Use LoRA instead of SpikeLoRA")
+    parser.add_argument("--adalora", action="store_true", help="Use AdaLoRA instead of SpikeLoRA")
     parser.add_argument("--rank", type=int, default=8, help="Rank for LoRA/SpikeLoRA")
     parser.add_argument("--dropout", type=float, default=0.0, help="Dropout for LoRA/SpikeLoRA")
-    parser.add_argument("--v", type=float, default=0.1, help="Voltage threshold for SpikeLoRA")
+    parser.add_argument("--v", type=float, default=1.0, help="Voltage threshold for SpikeLoRA")
     parser.add_argument("--experiment", type=str, default="default", help="WandB experiment name")
     args = parser.parse_args()
 
