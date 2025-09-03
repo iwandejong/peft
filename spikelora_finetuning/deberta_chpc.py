@@ -125,10 +125,6 @@ def train_and_eval(**params) -> float:
     train_ds = dataset["train"]
     val_ds = dataset[val_split]
 
-    # pick super small subset just to test pipeline
-    train_ds = train_ds.select(range(100))
-    val_ds = val_ds.select(range(100))
-
     def preprocess(example):
         key1, key2 = TASK_TO_KEYS[params["task"]]
         if key2 is None:
@@ -335,12 +331,10 @@ if __name__ == "__main__":
     params["v_threshold"] = BEST_PARAMS[params["task"]]["v_threshold"]
     params["learning_rate"] = BEST_PARAMS[params["task"]]["learning_rate"]
     params["batch_size"] = BEST_PARAMS[params["task"]]["batch_size"]
-    # params["num_epochs"] = BEST_PARAMS[params["task"]]["num_epochs"]
-    params["num_epochs"] = 1
+    params["num_epochs"] = BEST_PARAMS[params["task"]]["num_epochs"]
 
     # Setup seeds
-    # seeds = [1,2,3,4,5]
-    seeds = [1]
+    seeds = [1,2,3,4,5]
     sparsities = []
     scores = []
     for seed in seeds:
