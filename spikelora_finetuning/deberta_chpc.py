@@ -337,7 +337,7 @@ if __name__ == "__main__":
     scores = []
     for seed in seeds:
         params["seed"] = seed
-        params["experiment"] = f"{args.task}-r{args.rank}-v{args.v}{'--lora' if args.lora else ''}{'--adalora' if args.adalora else ''}-s{seed}"
+        params["experiment"] = f"{args.task}-r{args.rank}-v{args.v_threshold}{'--lora' if args.lora else ''}{'--adalora' if args.adalora else ''}-s{seed}"
         print(f"Running with params: {params}")
         score, sparsity = train_and_eval(**params)
         scores.append(score)
