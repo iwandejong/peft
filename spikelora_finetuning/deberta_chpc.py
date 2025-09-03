@@ -247,7 +247,7 @@ def train_and_eval(**params) -> float:
         mcc = matthews_corrcoef(labels, preds)
         return 0.0 if np.isnan(mcc) else mcc
 
-
+    global_sparsity = []
     def compute_metrics(eval_pred):
         logits, labels = eval_pred
         # --- standard task metrics ---
@@ -277,6 +277,7 @@ def train_and_eval(**params) -> float:
 
         # global aggregated metrics
         metrics["sparsity"] = float(torch.tensor(sparsity_list).mean()) if sparsity_list else 0.0
+        global_sparsity.append(metrics["sparsity"])
 
         # per-adapter metrics
         metrics.update(sparsity_dict)
@@ -306,7 +307,8 @@ def train_and_eval(**params) -> float:
         metrics = trainer.evaluate()
         main_score = pick_main_score(metrics)
         wandb.finish()
-        return float(main_score) if main_score is not None else -999.0
+        avg_sparsity = float(torch.tensor(global_sparsity).mean()) if global_sparsity else 0.0
+        return float(main_score) if main_score is not None else -999.0, float(avg_sparsity)
     except Exception as e:
         print(f"[train_and_eval] failed for params={params}: {e}")
         import traceback
