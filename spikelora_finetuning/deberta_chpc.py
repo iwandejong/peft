@@ -168,7 +168,7 @@ def train_and_eval(**params) -> float:
       config =  LoraConfig( 
         r=params["rank"],
         lora_alpha=params["rank"],
-        lora_dropout=params["lora_dropout"],
+        lora_dropout=params["dropout"],
         target_modules="all-linear",
         task_type="SEQ_CLS",
         use_rslora=True
@@ -198,7 +198,7 @@ def train_and_eval(**params) -> float:
       config = LoraConfig(
         r=params["rank"],
         lora_alpha=params["rank"],
-        lora_dropout=params["lora_dropout"],
+        lora_dropout=params["dropout"],
         target_modules="all-linear",
         task_type="SEQ_CLS",
         use_spikelora=True,
