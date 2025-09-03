@@ -837,7 +837,7 @@ class Embedding(nn.Module, LoraLayer):
         init_lora_weights: Union[bool, str] = True,
         use_rslora: bool = False,
         use_dora: bool = False,
-        use_spikelora: bool = True,
+        use_spikelora: bool = False,
         spikelora_v_threshold: float = 1.0,
         lora_bias: bool = False,
         **kwargs,
