@@ -125,10 +125,6 @@ def train_and_eval(**params) -> float:
     train_ds = dataset["train"]
     val_ds = dataset[val_split]
 
-    # select super small subset for fast testing
-    train_ds = train_ds.select(range(100))
-    val_ds = val_ds.select(range(100))
-
     def preprocess(example):
         key1, key2 = TASK_TO_KEYS[params["task"]]
         if key2 is None:
@@ -307,24 +303,6 @@ def train_and_eval(**params) -> float:
         metrics = trainer.evaluate()
         main_score = pick_main_score(metrics)
         wandb.finish()
-
-        # GLUE CSV logging: 
-        test_ds = dataset["test"]
-        test_enc = test_ds.map(preprocess, batched=True)
-        test_enc.set_format(type="torch", columns=[c for c in ["input_ids", "attention_mask", "token_type_ids"] if c in test_enc.column_names])
-
-        # Predict
-        preds = trainer.predict(test_enc).predictions
-        if params["task"] != "stsb":
-            preds = np.argmax(preds, axis=-1)
-        else:
-            preds = np.squeeze(preds)
-
-        # Save to CSV
-        import pandas as pd
-        submission = pd.DataFrame({"index": range(len(preds)), "label": preds})
-        submission.to_csv(f"{params['experiment']}_submission.csv", index=False)
-
         avg_sparsity = float(torch.tensor(global_sparsity).mean()) if global_sparsity else 0.0
         return float(main_score) if main_score is not None else -999.0, float(avg_sparsity)
     except Exception as e:
@@ -356,8 +334,7 @@ if __name__ == "__main__":
     params["num_epochs"] = BEST_PARAMS[params["task"]]["num_epochs"]
 
     # Setup seeds
-    # seeds = [1,2,3,4,5]
-    seeds = [1]
+    seeds = [1,2,3,4,5]
     sparsities = []
     scores = []
     for seed in seeds:
