@@ -62,3 +62,5 @@ qsub -v TASK=cola,SEED=3,RANK=32 deberta_4.sh -N cola-spike-3-32 -l walltime=01:
 qsub -v TASK=cola,SEED=4,RANK=32 deberta_4.sh -N cola-spike-4-32 -l walltime=01:30:00
 qsub -v TASK=cola,SEED=5,RANK=32 deberta_4.sh -N cola-spike-5-32 -l walltime=01:30:00
 
+# long-running seed jobs
+
