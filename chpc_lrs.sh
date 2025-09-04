@@ -29,7 +29,7 @@ python3 -c "import torch; print(torch.version.cuda, torch.cuda.is_available())"
 
 for TASK in cola
 do
-for LORA in "" "--lora"
+for LORA in ""
 do
 echo "Running: python3 spikelora_finetuning/deberta_chpc.py --task $TASK $LORA"
 python3 spikelora_finetuning/deberta_chpc.py --task $TASK $LORA > logs/${TASK}_${LORA//--/--}.log 2>&1
