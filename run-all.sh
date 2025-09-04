@@ -24,8 +24,8 @@ qsub -v TASK=mnli,LORA=true,WANDB_PROJECT=chpc deberta_12.sh -N mnli-lora
 # qsub -v TASK=cola,LORA=true,SEED=4,RANK=2 deberta_4.sh -N cola-lora-4-2 -l walltime=01:00:00 #
 # qsub -v TASK=cola,LORA=true,SEED=5,RANK=2 deberta_4.sh -N cola-lora-5-2 -l walltime=01:00:00 #
 # qsub -v TASK=cola,SEED=2,RANK=2 deberta_4.sh -N cola-spike-2-2 -l walltime=01:00:00 #
-qsub -v TASK=cola,SEED=1,RANK=2 deberta_4.sh -N cola-spike-1-2 -l walltime=01:00:00 #
-qsub -v TASK=cola,SEED=3,RANK=2 deberta_4.sh -N cola-spike-3-2 -l walltime=01:00:00 #
+# qsub -v TASK=cola,SEED=1,RANK=2 deberta_4.sh -N cola-spike-1-2 -l walltime=01:00:00 #
+# qsub -v TASK=cola,SEED=3,RANK=2 deberta_4.sh -N cola-spike-3-2 -l walltime=01:00:00 #
 qsub -v TASK=cola,SEED=4,RANK=2 deberta_4.sh -N cola-spike-4-2 -l walltime=01:00:00 #
 qsub -v TASK=cola,SEED=5,RANK=2 deberta_4.sh -N cola-spike-5-2 -l walltime=01:00:00 #
 
@@ -35,17 +35,17 @@ qsub -v TASK=cola,LORA=true,SEED=3,RANK=4 deberta_4.sh -N cola-lora-3-4 -l wallt
 qsub -v TASK=cola,LORA=true,SEED=4,RANK=4 deberta_4.sh -N cola-lora-4-4 -l walltime=01:30:00 #
 qsub -v TASK=cola,LORA=true,SEED=5,RANK=4 deberta_4.sh -N cola-lora-5-4 -l walltime=01:30:00 #
 qsub -v TASK=cola,SEED=1,RANK=4 deberta_4.sh -N cola-spike-1-4 -l walltime=01:30:00 #
-qsub -v TASK=cola,SEED=2,RANK=4 deberta_4.sh -N cola-spike-2-4 -l walltime=01:30:00
-qsub -v TASK=cola,SEED=3,RANK=4 deberta_4.sh -N cola-spike-3-4 -l walltime=01:30:00
-qsub -v TASK=cola,SEED=4,RANK=4 deberta_4.sh -N cola-spike-4-4 -l walltime=01:30:00
-qsub -v TASK=cola,SEED=5,RANK=4 deberta_4.sh -N cola-spike-5-4 -l walltime=01:30:00 
+qsub -v TASK=cola,SEED=2,RANK=4 deberta_4.sh -N cola-spike-2-4 -l walltime=01:30:00 #
+qsub -v TASK=cola,SEED=3,RANK=4 deberta_4.sh -N cola-spike-3-4 -l walltime=01:30:00 #
+qsub -v TASK=cola,SEED=4,RANK=4 deberta_4.sh -N cola-spike-4-4 -l walltime=01:30:00 #
+qsub -v TASK=cola,SEED=5,RANK=4 deberta_4.sh -N cola-spike-5-4 -l walltime=01:30:00 #
 
-qsub -v TASK=cola,LORA=true,SEED=1,RANK=16 deberta_4.sh -N cola-lora-1-16 -l walltime=03:00:00
-qsub -v TASK=cola,LORA=true,SEED=2,RANK=16 deberta_4.sh -N cola-lora-2-16 -l walltime=03:00:00
-qsub -v TASK=cola,LORA=true,SEED=3,RANK=16 deberta_4.sh -N cola-lora-3-16 -l walltime=03:00:00
-qsub -v TASK=cola,LORA=true,SEED=4,RANK=16 deberta_4.sh -N cola-lora-4-16 -l walltime=03:00:00
-qsub -v TASK=cola,LORA=true,SEED=5,RANK=16 deberta_4.sh -N cola-lora-5-16 -l walltime=03:00:00
-qsub -v TASK=cola,SEED=1,RANK=16 deberta_4.sh -N cola-spike-1-16 -l walltime=03:00:00
+qsub -v TASK=cola,LORA=true,SEED=1,RANK=16 deberta_4.sh -N cola-lora-1-16 -l walltime=03:00:00 #
+qsub -v TASK=cola,LORA=true,SEED=2,RANK=16 deberta_4.sh -N cola-lora-2-16 -l walltime=03:00:00 #
+qsub -v TASK=cola,LORA=true,SEED=3,RANK=16 deberta_4.sh -N cola-lora-3-16 -l walltime=03:00:00 #
+qsub -v TASK=cola,LORA=true,SEED=4,RANK=16 deberta_4.sh -N cola-lora-4-16 -l walltime=03:00:00 #
+qsub -v TASK=cola,LORA=true,SEED=5,RANK=16 deberta_4.sh -N cola-lora-5-16 -l walltime=03:00:00 #
+qsub -v TASK=cola,SEED=1,RANK=16 deberta_4.sh -N cola-spike-1-16 -l walltime=03:00:00 #
 qsub -v TASK=cola,SEED=2,RANK=16 deberta_4.sh -N cola-spike-2-16 -l walltime=03:00:00
 qsub -v TASK=cola,SEED=3,RANK=16 deberta_4.sh -N cola-spike-3-16 -l walltime=03:00:00
 qsub -v TASK=cola,SEED=4,RANK=16 deberta_4.sh -N cola-spike-4-16 -l walltime=03:00:00
