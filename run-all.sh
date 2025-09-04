@@ -46,7 +46,7 @@ qsub -v TASK=cola,LORA=true,SEED=3,RANK=16 deberta_4.sh -N cola-lora-3-16 -l wal
 qsub -v TASK=cola,LORA=true,SEED=4,RANK=16 deberta_4.sh -N cola-lora-4-16 -l walltime=03:00:00 #
 qsub -v TASK=cola,LORA=true,SEED=5,RANK=16 deberta_4.sh -N cola-lora-5-16 -l walltime=03:00:00 #
 qsub -v TASK=cola,SEED=1,RANK=16 deberta_4.sh -N cola-spike-1-16 -l walltime=03:00:00 #
-qsub -v TASK=cola,SEED=2,RANK=16 deberta_4.sh -N cola-spike-2-16 -l walltime=03:00:00
+qsub -v TASK=cola,SEED=2,RANK=16 deberta_4.sh -N cola-spike-2-16 -l walltime=03:00:00 #
 qsub -v TASK=cola,SEED=3,RANK=16 deberta_4.sh -N cola-spike-3-16 -l walltime=03:00:00
 qsub -v TASK=cola,SEED=4,RANK=16 deberta_4.sh -N cola-spike-4-16 -l walltime=03:00:00
 qsub -v TASK=cola,SEED=5,RANK=16 deberta_4.sh -N cola-spike-5-16 -l walltime=03:00:00
