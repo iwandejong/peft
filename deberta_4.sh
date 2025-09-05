@@ -27,7 +27,7 @@ source /mnt/lustre/users/idejong/peft/venv/bin/activate
 # Check CUDA version and availability
 python3 -c "import torch; print(torch.version.cuda, torch.cuda.is_available())"
 
-TASK="qqp"
+TASK=${TASK:-sst2}
 
 for LORA in "" "--lora"
 do
