@@ -336,19 +336,16 @@ if __name__ == "__main__":
 
     # Setup seeds
     seeds = [1,2,3,4,5]
-    lrs = [1e-4, 5e-4, 8e-4, 1.1e-3] # 3e-4 already done
     sparsities = []
     scores = []
-    for lr in lrs:
-        params["learning_rate"] = lr
-        for seed in seeds:
-            params["seed"] = seed
-            params["experiment"] = f"{args.task}-r{args.rank}-v{args.v_threshold}{'--lora' if args.lora else ''}{'--adalora' if args.adalora else ''}-s{seed}"
-            print(f"Running with params: {params}")
-            score, sparsity = train_and_eval(**params)
-            scores.append(score)
-            sparsities.append(sparsity)
-            print(f"Score for seed {seed}: {score} (sparsity: {sparsities})")
+    for seed in seeds:
+        params["seed"] = seed
+        params["experiment"] = f"{args.task}-r{args.rank}-v{args.v_threshold}{'--lora' if args.lora else ''}{'--adalora' if args.adalora else ''}-s{seed}"
+        print(f"Running with params: {params}")
+        score, sparsity = train_and_eval(**params)
+        scores.append(score)
+        sparsities.append(sparsity)
+        print(f"Score for seed {seed}: {score} (sparsity: {sparsities})")
     
     # Final results
     score = np.mean(scores)
