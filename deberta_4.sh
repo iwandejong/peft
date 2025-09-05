@@ -30,7 +30,7 @@ python3 -c "import torch; print(torch.version.cuda, torch.cuda.is_available())"
 TASK=${TASK:-sst2}
 PROJECT="lrs"
 LR=${LR:-3e-4}
-LORA=${LORA:-""}s
+LORA=${LORA:-""}
 
 echo "Running: python3 spikelora_finetuning/deberta_chpc.py --task $TASK $LORA --project $PROJECT"
 python3 spikelora_finetuning/deberta_chpc.py --task $TASK $LORA --project $PROJECT > logs/${TASK}_${LORA//--/--}.log 2>&1
