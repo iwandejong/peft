@@ -28,7 +28,7 @@ source /mnt/lustre/users/idejong/peft/venv/bin/activate
 python3 -c "import torch; print(torch.version.cuda, torch.cuda.is_available())"
 
 TASK=${TASK:-sst2}
-PROJECT="lrs"
+PROJECT=${PROJECT:-"lrs"}
 LR=${LR:-3e-4}
 LORA=${LORA:-""}
 
