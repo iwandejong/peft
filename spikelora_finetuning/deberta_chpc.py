@@ -322,6 +322,7 @@ if __name__ == "__main__":
     parser.add_argument("--lora", action="store_true", help="Use LoRA instead of SpikeLoRA")
     parser.add_argument("--adalora", action="store_true", help="Use AdaLoRA instead of SpikeLoRA")
     parser.add_argument("--project", type=str, default="glue", help="wandb project name")
+    parser.add_argument("--lr", type=float, default=None, help="Learning rate (overrides best param)")
     args = parser.parse_args()
 
     # Convert args Namespace to dict
@@ -331,7 +332,7 @@ if __name__ == "__main__":
     params["rank"] = BEST_PARAMS[params["task"]]["lora_r"]
     params["dropout"] = BEST_PARAMS[params["task"]]["lora_dropout"]
     params["v_threshold"] = BEST_PARAMS[params["task"]]["v_threshold"]
-    params["learning_rate"] = BEST_PARAMS[params["task"]]["learning_rate"]
+    params["learning_rate"] = args.lr if args.lr is not None else BEST_PARAMS[params["task"]]["learning_rate"]
     params["batch_size"] = BEST_PARAMS[params["task"]]["batch_size"]
     params["num_epochs"] = BEST_PARAMS[params["task"]]["num_epochs"]
 
