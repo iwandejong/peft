@@ -281,7 +281,7 @@ def train_and_eval(**params) -> float:
 
         return metrics
     
-    wandb.init(project="glue", name=params["experiment"], config=params)
+    wandb.init(project=params["project"], name=params["experiment"], config=params)
 
     # log gradients to wandb
     wandb.watch(model, log="gradients", log_freq=100)
@@ -321,6 +321,7 @@ if __name__ == "__main__":
     parser.add_argument("--task", type=str, default="rte", help="GLUE task name")
     parser.add_argument("--lora", action="store_true", help="Use LoRA instead of SpikeLoRA")
     parser.add_argument("--adalora", action="store_true", help="Use AdaLoRA instead of SpikeLoRA")
+    parser.add_argument("--project", type=str, default="glue", help="wandb project name")
     args = parser.parse_args()
 
     # Convert args Namespace to dict

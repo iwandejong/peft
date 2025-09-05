@@ -28,9 +28,10 @@ source /mnt/lustre/users/idejong/peft/venv/bin/activate
 python3 -c "import torch; print(torch.version.cuda, torch.cuda.is_available())"
 
 TASK=${TASK:-sst2}
+PROJECT="lrs"
 
 for LORA in "" "--lora"
 do
-echo "Running: python3 spikelora_finetuning/deberta_chpc.py --task $TASK $LORA"
-python3 spikelora_finetuning/deberta_chpc.py --task $TASK $LORA > logs/${TASK}_${LORA//--/--}.log 2>&1
+echo "Running: python3 spikelora_finetuning/deberta_chpc.py --task $TASK $LORA --project $PROJECT"
+python3 spikelora_finetuning/deberta_chpc.py --task $TASK $LORA --project $PROJECT > logs/${TASK}_${LORA//--/--}.log 2>&1
 done
