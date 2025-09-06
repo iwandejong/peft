@@ -172,24 +172,44 @@ def train_and_eval(**params) -> float:
     elif params["adalora"]:
       print("Using AdaLoRA")
       from peft import AdaLoraConfig
-      config = AdaLoraConfig(
-        lora_alpha=params["rank"],
-        target_r=params["rank"],
-        init_r=min(2, params["rank"]),
-        tinit=0,
-        tfinal=0,
-        deltaT=1,
-        beta1=0.85,
-        beta2=0.85,
-        orth_reg_weight=0.5,
-        total_step=params["num_epochs"] * (len(train_enc) // params["batch_size"]),
-        rank_pattern=None,
-        target_modules="all-linear",
-        task_type="SEQ_CLS",
-        # use_spikelora=True,
-        # spikelora_v_threshold=params["v_threshold"],
-        use_rslora=True,
-      )
+      if params["spike"]:
+        print("with SpikeLoRA")
+        config = AdaLoraConfig(
+          lora_alpha=params["rank"],
+          target_r=params["rank"],
+          init_r=min(2, params["rank"]),
+          tinit=0,
+          tfinal=0,
+          deltaT=1,
+          beta1=0.85,
+          beta2=0.85,
+          orth_reg_weight=0.5,
+          total_step=params["num_epochs"] * (len(train_enc) // params["batch_size"]),
+          rank_pattern=None,
+          target_modules="all-linear",
+          task_type="SEQ_CLS",
+          use_spikelora=True,
+          spikelora_v_threshold=params["v_threshold"],
+          use_rslora=True,
+        )
+      else:
+        print("without SpikeLoRA")
+        config = AdaLoraConfig(
+          lora_alpha=params["rank"],
+          target_r=params["rank"],
+          init_r=min(2, params["rank"]),
+          tinit=0,
+          tfinal=0,
+          deltaT=1,
+          beta1=0.85,
+          beta2=0.85,
+          orth_reg_weight=0.5,
+          total_step=params["num_epochs"] * (len(train_enc) // params["batch_size"]),
+          rank_pattern=None,
+          target_modules="all-linear",
+          task_type="SEQ_CLS",
+          use_rslora=True,
+        )
     else:
       print("Using SpikeLoRA")
       config = LoraConfig(
@@ -321,6 +341,7 @@ if __name__ == "__main__":
     parser.add_argument("--task", type=str, default="rte", help="GLUE task name")
     parser.add_argument("--lora", action="store_true", help="Use LoRA instead of SpikeLoRA")
     parser.add_argument("--adalora", action="store_true", help="Use AdaLoRA instead of SpikeLoRA")
+    parser.add_argument("--spike", action="store_true", help="Use a SpikeLORA variant")
     parser.add_argument("--project", type=str, default="glue", help="wandb project name")
     parser.add_argument("--lr", type=float, default=None, help="Learning rate (overrides best param)")
     args = parser.parse_args()

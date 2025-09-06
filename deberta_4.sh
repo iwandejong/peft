@@ -27,10 +27,10 @@ source /mnt/lustre/users/idejong/peft/venv/bin/activate
 # Check CUDA version and availability
 python3 -c "import torch; print(torch.version.cuda, torch.cuda.is_available())"
 
-TASK=${TASK:-sst2}
-PROJECT=${PROJECT:-"lrs"}
-LR=${LR:-3e-4}
+TASK=${TASK:-cola}
+PROJECT=${PROJECT:-"glue"}
 LORA=${LORA:-""}
+SPIKE=${SPIKE:-""}
 
-echo "Running: python3 spikelora_finetuning/deberta_chpc.py --task $TASK $LORA --project $PROJECT --lr $LR"
-python3 spikelora_finetuning/deberta_chpc.py --task $TASK $LORA --project $PROJECT  --lr $LR > logs/${TASK}_${LORA//--/--}.log 2>&1
+echo "Running: python3 spikelora_finetuning/deberta_chpc.py --task $TASK --project $PROJECT $SPIKE $LORA"
+python3 spikelora_finetuning/deberta_chpc.py --task $TASK --project $PROJECT $SPIKE $LORA > ${TASK}_${PROJECT}_${LORA}_${SPIKE}_output.log 2> ${TASK}_${PROJECT}_${LORA}_${SPIKE}_error.log
