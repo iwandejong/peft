@@ -186,8 +186,8 @@ def train_and_eval(**params) -> float:
         rank_pattern=None,
         target_modules="all-linear",
         task_type="SEQ_CLS",
-        use_spikelora=True,
-        spikelora_v_threshold=params["v_threshold"],
+        # use_spikelora=True,
+        # spikelora_v_threshold=params["v_threshold"],
         use_rslora=True,
       )
     else:
