@@ -76,7 +76,7 @@ class AdaLoraLayer(LoraLayer):
         self.spikelora_lif[adapter_name] = neuron.LIFNode(
             tau=2.0, 
             surrogate_function=surrogate.ATan(alpha=2.0), 
-            v_threshold=1.0, 
+            v_threshold=0.1, 
             detach_reset=True
         )
 
@@ -195,7 +195,7 @@ class SVDLinear(nn.Module, AdaLoraLayer):
                 if self.spikelora_lif[active_adapter]:
                     lif = self.spikelora_lif[active_adapter]
                     spikes = lif(lora_out)
-                    lora_out = lora_out * spikes
+                    lora_out = lora_out * spikes.detach() # detach to avoid double counting gradients
                 result += (lora_out @ lora_B.T) * scaling / ranknum
 
         return result

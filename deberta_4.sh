@@ -31,6 +31,15 @@ TASK=${TASK:-cola}
 PROJECT=${PROJECT:-"glue"}
 LORA=${LORA:-""}
 SPIKE=${SPIKE:-""}
+SEED=${SEED:-""}
+
+if [ -z "$SEED" ]
+then
+    echo "No SEED specified, running all seeds 1-5"
+else
+    echo "Using SEED $SEED"
+    LORA="$LORA --seed $SEED"
+fi
 
 echo "Running: python3 spikelora_finetuning/deberta_chpc.py --task $TASK --project $PROJECT $SPIKE $LORA"
 python3 spikelora_finetuning/deberta_chpc.py --task $TASK --project $PROJECT $SPIKE $LORA > ${TASK}_${PROJECT}_${LORA}_${SPIKE}_output.log 2> ${TASK}_${PROJECT}_${LORA}_${SPIKE}_error.log

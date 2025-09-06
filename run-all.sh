@@ -82,3 +82,5 @@ qsub -v TASK=rte,PROJECT=glue-adalora,LORA=--adalora,SPIKE=--spike deberta_4.sh 
 qsub -v TASK=qqp,LORA=--lora deberta_4.sh -N lora-qqp -N lora-qqp -l select=1:host=gpu2006:ncpus=9:ngpus=1
 qsub -v TASK=qqp deberta_4.sh -N lora-qqp -N lora-qqp -l select=1:host=gpu2006:ncpus=9:ngpus=1
 
+qsub -v TASK=qqp deberta_4.sh -N lora-qqp -N lora-qqp -l select=1:host=gpu2006:ncpus=9:ngpus=1
+

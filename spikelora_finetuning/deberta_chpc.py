@@ -344,6 +344,7 @@ if __name__ == "__main__":
     parser.add_argument("--spike", action="store_true", help="Use a SpikeLORA variant")
     parser.add_argument("--project", type=str, default="glue", help="wandb project name")
     parser.add_argument("--lr", type=float, default=None, help="Learning rate (overrides best param)")
+    parser.add_argument("--seed", type=int, default=None, help="Random seed (overrides loop)")
     args = parser.parse_args()
 
     # Convert args Namespace to dict
@@ -358,7 +359,7 @@ if __name__ == "__main__":
     params["num_epochs"] = BEST_PARAMS[params["task"]]["num_epochs"]
 
     # Setup seeds
-    seeds = [1,2,3,4,5]
+    seeds = [args.seed] if args.seed is not None else [1,2,3,4,5]
     sparsities = []
     scores = []
     for seed in seeds:
