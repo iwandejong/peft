@@ -196,8 +196,8 @@ def train_and_eval(**params) -> float:
         rank_pattern=None,
         target_modules=target_modules,
         task_type="SEQ_CLS",
-        use_spikelora=True,
-        spikelora_v_threshold=params["v"],
+        # use_spikelora=True,
+        # spikelora_v_threshold=params["v"],
         use_rslora=True,
       )
     else:
@@ -325,7 +325,7 @@ if __name__ == "__main__":
     import argparse
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("--task", type=str, default="rte", help="GLUE task name")
+    parser.add_argument("--task", type=str, default="mrpc", help="GLUE task name")
     parser.add_argument("--lora", action="store_true", help="Use LoRA instead of SpikeLoRA")
     parser.add_argument("--adalora", action="store_true", help="Use AdaLoRA instead of SpikeLoRA")
     parser.add_argument("--rank", type=int, default=8, help="Rank for LoRA/SpikeLoRA")
@@ -343,7 +343,7 @@ if __name__ == "__main__":
     params["num_epochs"] = 5
 
     # Setup seeds
-    seeds = [1,2,3,4,5]
+    seeds = [1]
     sparsities = []
     scores = []
     experiment = params["experiment"]

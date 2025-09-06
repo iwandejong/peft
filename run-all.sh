@@ -72,3 +72,8 @@ qsub -v TASK=cola,PROJECT=glue-adalora,LORA=--adalora deberta_4.sh -N ada-cola -
 qsub -v TASK=mrpc,PROJECT=glue-adalora,LORA=--adalora deberta_4.sh -N ada-mrpc -l walltime=01:30:00
 qsub -v TASK=stsb,PROJECT=glue-adalora,LORA=--adalora deberta_4.sh -N ada-stsb -l walltime=01:30:00
 qsub -v TASK=rte,PROJECT=glue-adalora,LORA=--adalora deberta_4.sh -N ada-rte -l walltime=01:30:00
+
+qsub -v TASK=cola,PROJECT=glue-adalora,LORA=--adalora,SPIKE=--spike deberta_4.sh -N ada-s-cola -l walltime=01:30:00
+qsub -v TASK=mrpc,PROJECT=glue-adalora,LORA=--adalora,SPIKE=--spike deberta_4.sh -N ada-s-mrpc -l walltime=01:30:00
+qsub -v TASK=stsb,PROJECT=glue-adalora,LORA=--adalora,SPIKE=--spike deberta_4.sh -N ada-s-stsb -l walltime=01:30:00
+qsub -v TASK=rte,PROJECT=glue-adalora,LORA=--adalora,SPIKE=--spike deberta_4.sh -N ada-s-rte -l walltime=01:30:00
