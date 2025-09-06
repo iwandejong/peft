@@ -358,7 +358,7 @@ if __name__ == "__main__":
     params["num_epochs"] = BEST_PARAMS[params["task"]]["num_epochs"]
 
     # Setup seeds
-    seeds = [5]
+    seeds = [1,2,3,4,5]
     sparsities = []
     scores = []
     for seed in seeds:
