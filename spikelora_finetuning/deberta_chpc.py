@@ -343,6 +343,7 @@ if __name__ == "__main__":
     parser.add_argument("--adalora", action="store_true", help="Use AdaLoRA instead of SpikeLoRA")
     parser.add_argument("--spike", action="store_true", help="Use a SpikeLORA variant")
     parser.add_argument("--project", type=str, default="glue", help="wandb project name")
+    parser.add_argument("--r", type=int, default=None, help="LoRA rank (overrides best param)")
     parser.add_argument("--lr", type=float, default=None, help="Learning rate (overrides best param)")
     parser.add_argument("--seed", type=int, default=None, help="Random seed (overrides loop)")
     args = parser.parse_args()
@@ -351,7 +352,7 @@ if __name__ == "__main__":
     params = vars(args)
 
     # Add extra parameters
-    params["rank"] = BEST_PARAMS[params["task"]]["lora_r"]
+    params["rank"] = args.r if args.r is not None else BEST_PARAMS[params["task"]]["lora_r"]
     params["dropout"] = BEST_PARAMS[params["task"]]["lora_dropout"]
     params["v_threshold"] = BEST_PARAMS[params["task"]]["v_threshold"]
     params["learning_rate"] = args.lr if args.lr is not None else BEST_PARAMS[params["task"]]["learning_rate"]
