@@ -13,3 +13,9 @@ pyyaml
 datasets
 psutil
 setuptools
+
+# spikelora
+spikingjelly
+sentencepiece
+wandb
+scikit-learn
