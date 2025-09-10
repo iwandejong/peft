@@ -5,8 +5,8 @@ for LORA in "" "--lora"
 do
 for RANK in 64 128
 do
-echo "Running: python3 spikelora_finetuning/deberta_chpc.py --task $TASK --rank $RANK $LORA"
-python3 spikelora_finetuning/deberta_chpc.py --task $TASK --rank $RANK $LORA > logs/${TASK}_r${RANK}${LORA//--/--}.log 2>&1
+echo "Running: python3 spikelora_finetuning/deberta_chpc.py --task $TASK --r $RANK $LORA"
+python3 spikelora_finetuning/deberta_chpc.py --task $TASK --r $RANK $LORA > logs/${TASK}_r${RANK}${LORA//--/--}.log 2>&1
 done
 done
 done
