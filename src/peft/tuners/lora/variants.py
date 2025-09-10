@@ -358,17 +358,12 @@ class SpikeLoraLinearVariant(LoraVariant):
         lora_out = dropout(lora_out)
         
         # Reset LIF for each forward pass (pointwise spiking)
-        # lif.reset()
-        # spikes = lif(lora_out)
-        # lora_out = lora_out * spikes  # gated by spikes
-        # module.sparsity[active_adapter] = (spikes == 0).float().mean().item()
-        
-        lora_out = lora_B(lora_out) * scaling
-        
         lif.reset()
         spikes = lif(lora_out)
         lora_out = lora_out * spikes  # gated by spikes
         module.sparsity[active_adapter] = (spikes == 0).float().mean().item()
+        
+        lora_out = lora_B(lora_out) * scaling
         
         return result + lora_out
 
