@@ -9,6 +9,7 @@ echo "Running: python3 spikelora_finetuning/deberta_chpc.py --task $TASK --rank 
 python3 spikelora_finetuning/deberta_chpc.py --task $TASK --rank $RANK $LORA > logs/${TASK}_r${RANK}${LORA//--/--}.log 2>&1
 done
 done
+done
 
 for TASK in cola
 do
