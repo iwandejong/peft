@@ -5,8 +5,8 @@ for LORA in "" "--lora"
 do
 for RANK in 64 128
 do
-echo "Running: python3 spikelora_finetuning/deberta_chpc.py --task $TASK --r $RANK $LORA"
-python3 spikelora_finetuning/deberta_chpc.py --task $TASK --r $RANK $LORA > logs/${TASK}_r${RANK}${LORA//--/--}.log 2>&1
+echo "Running: python3 spikelora_finetuning/deberta_chpc.py --task $TASK --r $RANK $LORA --project deberta-spikelora"
+python3 spikelora_finetuning/deberta_chpc.py --task $TASK --r $RANK $LORA --project deberta-spikelora > logs/${TASK}_r${RANK}${LORA//--/--}.log 2>&1
 done
 done
 done
@@ -17,8 +17,8 @@ for LORA in "" "--lora"
 do
 for LR in 1.1e-3 1.3e-3
 do
-echo "Running: python3 spikelora_finetuning/deberta_chpc.py --task $TASK --lr $LR $LORA"
-python3 spikelora_finetuning/deberta_chpc.py --task $TASK --lr $LR $LORA > logs/${TASK}_lr${LR}${LORA//--/--}.log 2>&1
+echo "Running: python3 spikelora_finetuning/deberta_chpc.py --task $TASK --lr $LR $LORA --project lrs"
+python3 spikelora_finetuning/deberta_chpc.py --task $TASK --lr $LR $LORA --project lrs > logs/${TASK}_lr${LR}${LORA//--/--}.log 2>&1
 done
 done
 done
