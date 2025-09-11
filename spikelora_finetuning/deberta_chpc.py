@@ -346,6 +346,7 @@ if __name__ == "__main__":
     parser.add_argument("--r", type=int, default=None, help="LoRA rank (overrides best param)")
     parser.add_argument("--lr", type=float, default=None, help="Learning rate (overrides best param)")
     parser.add_argument("--seed", type=int, default=None, help="Random seed (overrides loop)")
+    parser.add_argument("--dropout", type=float, default=None, help="LoRA dropout (overrides best param)")
     args = parser.parse_args()
 
     # Convert args Namespace to dict
@@ -353,7 +354,7 @@ if __name__ == "__main__":
 
     # Add extra parameters
     params["rank"] = args.r if args.r is not None else BEST_PARAMS[params["task"]]["lora_r"]
-    params["dropout"] = BEST_PARAMS[params["task"]]["lora_dropout"]
+    params["dropout"] = args.dropout if args.dropout is not None else BEST_PARAMS[params["task"]]["lora_dropout"]
     params["v_threshold"] = BEST_PARAMS[params["task"]]["v_threshold"]
     params["learning_rate"] = args.lr if args.lr is not None else BEST_PARAMS[params["task"]]["learning_rate"]
     params["batch_size"] = BEST_PARAMS[params["task"]]["batch_size"]
