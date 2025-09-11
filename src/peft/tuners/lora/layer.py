@@ -114,7 +114,7 @@ class LoraLayer(BaseTunerLayer):
         self.use_spikelora: dict[str, bool] = {}
         self.spikelora_lif = torch.nn.ModuleDict()
         self.spikelora_v_threshold: dict[str, float] = {}
-        # self.sparsity = {}
+        self.sparsity = {}
         
         self.kwargs = kwargs
 
