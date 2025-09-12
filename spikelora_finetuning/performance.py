@@ -169,8 +169,6 @@ def train_and_eval(**params) -> float:
 
     # Trainer setup
     training_args = TrainingArguments(
-        output_dir="./out",
-        logging_dir="./logs",
         per_device_train_batch_size=params["batch_size"],
         per_device_eval_batch_size=params["batch_size"],
         learning_rate=params["learning_rate"],
