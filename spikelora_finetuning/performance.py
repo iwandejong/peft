@@ -274,9 +274,9 @@ if __name__ == "__main__":
         params["seed"] = seed
         params["experiment"] = f"{args.task}-r{args.rank}-v{args.v_threshold}{'--lora' if args.lora else ''}{'--adalora' if args.adalora else ''}-s{seed}"
         print(f"Running with params: {params}")
-        time = train_and_eval(**params)
-        times.append(time)
-        print(f"Training time: {time/60:.2f} minutes")
+        t = train_and_eval(**params)
+        times.append(t)
+        print(f"Training time: {t/60:.2f} minutes")
     
     # Final results
     mean_time = np.mean([t for t in times if t > 0])
