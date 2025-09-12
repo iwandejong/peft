@@ -304,7 +304,7 @@ def train_and_eval(**params) -> float:
     wandb.init(project=params["project"], name=params["experiment"], config=params)
 
     # log gradients to wandb
-    wandb.watch(model, log="gradients", log_freq=100)
+    wandb.watch(model, log="gradients", log_freq=1000)
 
     trainer = Trainer(
         model=model,
@@ -347,7 +347,6 @@ if __name__ == "__main__":
     parser.add_argument("--lr", type=float, default=None, help="Learning rate (overrides best param)")
     parser.add_argument("--seed", type=int, default=None, help="Random seed (overrides loop)")
     parser.add_argument("--dropout", type=float, default=None, help="LoRA dropout (overrides best param)")
-    parser.add_argument("--bz", type=int, default=None, help="Batch size (overrides best param)")
     args = parser.parse_args()
 
     # Convert args Namespace to dict
