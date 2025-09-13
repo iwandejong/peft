@@ -155,6 +155,7 @@ def train_and_eval(**params) -> float:
             ),
             bnb_4bit_use_double_quant=True,
             bnb_4bit_quant_type="nf4",
+            llm_int8_skip_modules=["pre_classifier", "classifier"],
         )
 
         model = AutoModelForSequenceClassification.from_pretrained(
