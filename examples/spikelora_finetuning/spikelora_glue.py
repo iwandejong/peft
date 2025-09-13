@@ -13,7 +13,7 @@ from transformers import (
     set_seed,
     TrainerCallback
 )
-from peft import get_peft_model, LoraConfig
+from peft import get_peft_model, LoraConfig, prepare_model_for_kbit_training
 import numpy as np
 
 # --- Utility functions ---
