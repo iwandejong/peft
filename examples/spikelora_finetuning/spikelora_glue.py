@@ -208,7 +208,6 @@ def train_and_eval(**params) -> float:
         use_rslora=True
       )
   
-    model.to(device)
     model = get_peft_model(model, config)
     model.to(device)
 
@@ -236,11 +235,6 @@ def train_and_eval(**params) -> float:
         metric_for_best_model="accuracy" if params["task"] not in ["stsb", "cola"] else "matthews_correlation" if params["task"] == "cola" else "pearson",
         dataloader_pin_memory=False if (params["quantize"] and device.type == "cuda") else True, # pin_memory=False when using 4-bit quantization on CUDA
     )
-
-    for name, module in model.named_modules():
-        if "Linear4bit" in str(type(module)):
-            print(name, module.weight.device)
-
 
     def safe_corr(x, y, corr_fn):
         try:
