@@ -148,20 +148,23 @@ def train_and_eval(**params) -> float:
     val_enc.set_format(type="torch", columns=cols)
 
     if params["quantize"] and device.type == "cuda":
+        q_config = BitsAndBytesConfig(
+            load_in_4bit=True,
+            bnb_4bit_compute_dtype=(
+                torch.bfloat16 if torch.cuda.is_available() and torch.cuda.is_bf16_supported() else torch.float16
+            ),
+            bnb_4bit_use_double_quant=True,
+            bnb_4bit_quant_type="nf4",
+        )
+
         model = AutoModelForSequenceClassification.from_pretrained(
             MODEL_NAME,
             num_labels=1 if params["task"] == "stsb" else dataset["train"].features["label"].num_classes,
             problem_type="regression" if params["task"] == "stsb" else None,
             trust_remote_code=True,
             ignore_mismatched_sizes=True,
-            quantization_config=BitsAndBytesConfig(
-                load_in_4bit=True,
-                bnb_4bit_compute_dtype=(
-                    torch.bfloat16 if torch.cuda.is_available() and torch.cuda.is_bf16_supported() else torch.float16
-                ),
-                bnb_4bit_use_double_quant=True,
-                bnb_4bit_quant_type="nf4",
-            )
+            quantization_config=q_config,
+            device_map="auto",
         )
         # setup for quantized training
         model = prepare_model_for_kbit_training(model, use_gradient_checkpointing=True)
@@ -171,7 +174,8 @@ def train_and_eval(**params) -> float:
             num_labels=1 if params["task"] == "stsb" else dataset["train"].features["label"].num_classes,
             problem_type="regression" if params["task"] == "stsb" else None,
             trust_remote_code=True,
-            ignore_mismatched_sizes=True
+            ignore_mismatched_sizes=True,
+            device_map="auto",
         )
 
     # target modules for DistilBERT
