@@ -120,6 +120,11 @@ class LoraLayer(BaseTunerLayer):
         # flag to enable/disable casting of input to weight dtype during forward call
         self.cast_input_dtype_enabled: bool = True
         self.lora_variant: dict[str, LoraVariant] = {}
+        # For SpikeLoRA 
+        self.use_spikelora: dict[str, bool] = {}
+        self.spikelora_lif = torch.nn.ModuleDict()
+        self.spikelora_v_threshold: dict[str, float] = {}
+        self.sparsity = {} # for logging/debugging
         self.kwargs = kwargs
 
         base_layer = self.get_base_layer()
@@ -204,6 +209,8 @@ class LoraLayer(BaseTunerLayer):
         use_rslora,
         use_dora: bool = False,
         use_alora: bool = False,
+        use_spikelora: bool = False,
+        spikelora_v_threshold: float = 1.0,
         use_qalora: bool = False,
         lora_bias: bool = False,
         arrow_config: ArrowConfig = None,
@@ -229,6 +236,7 @@ class LoraLayer(BaseTunerLayer):
         lora_variant = self.resolve_lora_variant(
             use_dora=use_dora,
             use_alora=use_alora,
+            use_spikelora=use_spikelora,
             use_qalora=use_qalora,
             qalora_group_size=qalora_group_size,
             arrow_config=arrow_config,
@@ -256,6 +264,8 @@ class LoraLayer(BaseTunerLayer):
             self.scaling[adapter_name] = lora_alpha / r
 
         self.use_dora[adapter_name] = use_dora
+        self.use_spikelora[adapter_name] = use_spikelora
+        self.spikelora_v_threshold[adapter_name] = spikelora_v_threshold
 
         # for inits that require access to the base weight, use gather_param_ctx so that the weight is gathered when using DeepSpeed
         if isinstance(init_lora_weights, str) and init_lora_weights.startswith("pissa"):
@@ -657,6 +667,8 @@ class Linear(nn.Module, LoraLayer):
         use_dora: bool = False,
         use_alora: bool = False,
         arrow_config: ArrowConfig = None,
+        use_spikelora: bool = False,
+        spikelora_v_threshold: float = 1.0,
         lora_bias: bool = False,
         **kwargs,
     ) -> None:
@@ -674,28 +686,33 @@ class Linear(nn.Module, LoraLayer):
             use_rslora=use_rslora,
             use_dora=use_dora,
             use_alora=use_alora,
+            use_spikelora=use_spikelora,
+            spikelora_v_threshold=spikelora_v_threshold,
             lora_bias=lora_bias,
             arrow_config=arrow_config,
         )
         self.is_target_conv_1d_layer = is_target_conv_1d_layer
 
     def resolve_lora_variant(
-        self, *, arrow_config: ArrowConfig, use_dora: bool, use_alora: bool, **kwargs
+        self, *, arrow_config: ArrowConfig, use_dora: bool, use_alora: bool, use_spikelora, **kwargs
     ) -> Optional[LoraVariant]:
         if arrow_config is not None:
             from .variants import ArrowLinearVariant
-
             return ArrowLinearVariant()
-
-        if not use_dora and not use_alora:
-            return None
-
-        from .variants import ALoraLinearVariant, DoraLinearVariant
-
-        if use_alora:
-            return ALoraLinearVariant()
-        else:
+        
+        if use_dora:
+            from .variants import DoraLinearVariant
             return DoraLinearVariant()
+        
+        if use_alora:
+            from .variants import ALoraLinearVariant
+            return ALoraLinearVariant()
+
+        if use_spikelora:
+            from .variants import SpikeLoraLinearVariant
+            return SpikeLoraLinearVariant()
+
+        return None
 
     def merge(self, safe_merge: bool = False, adapter_names: Optional[list[str]] = None) -> None:
         """
@@ -882,6 +899,8 @@ class Embedding(nn.Module, LoraLayer):
         init_lora_weights: Union[bool, str] = True,
         use_rslora: bool = False,
         use_dora: bool = False,
+        use_spikelora: bool = False,
+        spikelora_v_threshold: float = 1.0,
         arrow_config: ArrowConfig = None,
         lora_bias: bool = False,
         **kwargs,
@@ -889,6 +908,8 @@ class Embedding(nn.Module, LoraLayer):
         if lora_bias:
             # lora_bias=True is not supported (yet) for embedding layers, as they use nn.Parameter
             raise ValueError(f"lora_bias={lora_bias} is not supported for {self.__class__.__name__}.")
+        if use_spikelora:
+            raise ValueError(f"SpikeLora is not (yet) supported for {self.__class__.__name__}.")
 
         super().__init__()
         LoraLayer.__init__(self, base_layer)
@@ -903,17 +924,18 @@ class Embedding(nn.Module, LoraLayer):
             init_lora_weights=init_lora_weights,
             use_rslora=use_rslora,
             use_dora=use_dora,
+            use_spikelora=use_spikelora,
+            spikelora_v_threshold=spikelora_v_threshold,
             lora_bias=lora_bias,
             arrow_config=arrow_config,
         )
 
-    def resolve_lora_variant(self, *, use_dora: bool, **kwargs) -> Optional[LoraVariant]:
-        if not use_dora:
-            return None
+    def resolve_lora_variant(self, *, use_dora: bool, **kwargs) -> Optional[LoraVariant]:    
+        if use_dora:
+            from .variants import DoraEmbeddingVariant
+            return DoraEmbeddingVariant()
 
-        from .variants import DoraEmbeddingVariant
-
-        return DoraEmbeddingVariant()
+        return None
 
     def update_layer(
         self,
@@ -924,6 +946,8 @@ class Embedding(nn.Module, LoraLayer):
         init_lora_weights,
         use_rslora,
         use_dora,
+        use_spikelora,
+        spikelora_v_threshold,
         lora_bias,
         arrow_config: ArrowConfig = None,
         inference_mode: bool = False,
@@ -936,7 +960,7 @@ class Embedding(nn.Module, LoraLayer):
         if r <= 0:
             raise ValueError(f"`r` should be a positive integer value but the value passed is {r}")
 
-        lora_variant = self.resolve_lora_variant(use_dora=use_dora, arrow_config=arrow_config)
+        lora_variant = self.resolve_lora_variant(use_dora=use_dora, use_spikelora=use_spikelora, arrow_config=arrow_config)
         if lora_variant is not None:
             self.lora_variant[adapter_name] = lora_variant
 
@@ -961,6 +985,8 @@ class Embedding(nn.Module, LoraLayer):
             self.scaling[adapter_name] = lora_alpha / r
 
         self.use_dora[adapter_name] = use_dora
+        self.use_spikelora[adapter_name] = use_spikelora
+        self.spikelora_v_threshold[adapter_name] = spikelora_v_threshold
 
         if init_lora_weights == "loftq":
             self.loftq_init(adapter_name)
@@ -1169,6 +1195,8 @@ class _ConvNd(nn.Module, LoraLayer):
         init_lora_weights: Union[bool, str] = True,
         use_rslora: bool = False,
         use_dora: bool = False,
+        use_spikelora: bool = False,
+        spikelora_v_threshold: float = 1.0,
         arrow_config: ArrowConfig = None,
         lora_bias: bool = False,
         **kwargs,
@@ -1179,6 +1207,8 @@ class _ConvNd(nn.Module, LoraLayer):
             raise ValueError("aLoRA does not support adapting conv layers.")
         if base_layer.groups > 1:
             warnings.warn("LoRA adapter added to ConvNd layer with groups > 1. Merging is not supported.")
+        if use_spikelora:
+            raise ValueError(f"SpikeLora is not (yet) supported for {self.__class__.__name__}.")
 
         if r % base_layer.groups != 0:
             raise ValueError(
@@ -1198,6 +1228,8 @@ class _ConvNd(nn.Module, LoraLayer):
             init_lora_weights=init_lora_weights,
             use_rslora=use_rslora,
             use_dora=use_dora,
+            use_spikelora=use_spikelora,
+            spikelora_v_threshold=spikelora_v_threshold,
             lora_bias=lora_bias,
             arrow_config=arrow_config,
         )
@@ -1211,6 +1243,8 @@ class _ConvNd(nn.Module, LoraLayer):
         init_lora_weights,
         use_rslora,
         use_dora,
+        use_spikelora,
+        spikelora_v_threshold,
         lora_bias,
         arrow_config: ArrowConfig = None,
         inference_mode: bool = False,
@@ -1230,7 +1264,7 @@ class _ConvNd(nn.Module, LoraLayer):
                 PeftWarning,
             )
 
-        lora_variant = self.resolve_lora_variant(use_dora=use_dora, arrow_config=arrow_config)
+        lora_variant = self.resolve_lora_variant(use_dora=use_dora, use_spikelora=use_spikelora, arrow_config=arrow_config)
         if lora_variant is not None:
             self.lora_variant[adapter_name] = lora_variant
 
@@ -1261,6 +1295,8 @@ class _ConvNd(nn.Module, LoraLayer):
             self.scaling[adapter_name] = lora_alpha / r
 
         self.use_dora[adapter_name] = use_dora
+        self.use_spikelora[adapter_name] = use_spikelora
+        self.spikelora_v_threshold[adapter_name] = spikelora_v_threshold
 
         if init_lora_weights == "loftq":
             self.loftq_init(adapter_name)
@@ -1473,12 +1509,12 @@ class Conv2d(_ConvNd):
         self.conv_fn = F.conv2d
 
     def resolve_lora_variant(self, *, use_dora: bool, **kwargs) -> Optional[LoraVariant]:
-        if not use_dora:
-            return None
+        if use_dora:
+            from .variants import DoraConv2dVariant
+            return DoraConv2dVariant
 
-        from .variants import DoraConv2dVariant
+        return None
 
-        return DoraConv2dVariant()
 
 
 class Conv1d(_ConvNd):
@@ -1490,12 +1526,12 @@ class Conv1d(_ConvNd):
         self.conv_fn = F.conv1d
 
     def resolve_lora_variant(self, *, use_dora: bool, **kwargs) -> Optional[LoraVariant]:
-        if not use_dora:
-            return None
+        if use_dora:
+            from .variants import DoraConv1dVariant
+            return DoraConv1dVariant
 
-        from .variants import DoraConv1dVariant
+        return None
 
-        return DoraConv1dVariant()
 
 
 class Conv3d(_ConvNd):
@@ -1507,12 +1543,12 @@ class Conv3d(_ConvNd):
         self.conv_fn = F.conv3d
 
     def resolve_lora_variant(self, *, use_dora: bool, **kwargs) -> Optional[LoraVariant]:
-        if not use_dora:
-            return None
+        if use_dora:
+            from .variants import DoraConv3dVariant
+            return DoraConv3dVariant
 
-        from .variants import DoraConv3dVariant
+        return None
 
-        return DoraConv3dVariant()
 
 
 class MultiheadAttention(nn.Module, LoraLayer):
@@ -1541,6 +1577,8 @@ class MultiheadAttention(nn.Module, LoraLayer):
         init_lora_weights: Union[bool, str] = True,
         use_rslora: bool = False,
         use_dora: bool = False,
+        use_spikelora: bool = False,
+        spikelora_v_threshold: float = 1.0,
         **kwargs,
     ) -> None:
         # TODO work with separate weights
@@ -1555,6 +1593,8 @@ class MultiheadAttention(nn.Module, LoraLayer):
             raise ValueError(f"{self.__class__.__name__} does not support DoRA (yet), please set use_dora to False")
         if kwargs.get("use_alora", False):
             raise ValueError(f"{self.__class__.__name__} does not support aLoRA (yet), please set use_alora to False")
+        if use_spikelora:
+            raise ValueError(f"{self.__class__.__name__} does not support SpikeLoRA (yet), please set use_spikelora to False")
         super().__init__()
         LoraLayer.__init__(self, base_layer, **kwargs)
 
@@ -1569,6 +1609,8 @@ class MultiheadAttention(nn.Module, LoraLayer):
                 init_lora_weights=init_lora_weights,
                 use_rslora=use_rslora,
                 use_dora=use_dora,
+                use_spikelora=use_spikelora,
+                spikelora_v_threshold=spikelora_v_threshold,
                 **kwargs,
             )
         else:
@@ -1938,6 +1980,8 @@ class ParamWrapper(nn.Module, LoraLayer):
         init_lora_weights: Union[bool, str] = True,
         use_rslora: bool = False,
         use_dora: bool = False,
+        use_spikelora: bool = False,
+        spikelora_v_threshold: float = 1.0,
         lora_bias: bool = False,
         **kwargs,
     ) -> None:
@@ -1965,6 +2009,8 @@ class ParamWrapper(nn.Module, LoraLayer):
             raise ValueError(f"lora.{self.__class__.__name__} does not work with lora_bias=True.")
         if use_dora:
             raise ValueError(f"lora.{self.__class__.__name__} does not work with use_dora=True.")
+        if use_spikelora:
+            raise ValueError(f"lora.{self.__class__.__name__} does not work with use_spikelora=True.")
         if is_target_conv_1d_layer:
             raise ValueError(f"lora.{self.__class__.__name__} does not work with is_target_conv_1d_layer=True.")
 
@@ -1978,6 +2024,8 @@ class ParamWrapper(nn.Module, LoraLayer):
             init_lora_weights=init_lora_weights,
             use_rslora=use_rslora,
             use_dora=use_dora,
+            use_spikelora=use_spikelora,
+            spikelora_v_threshold=spikelora_v_threshold,
             lora_bias=lora_bias,
         )
 
@@ -1990,6 +2038,8 @@ class ParamWrapper(nn.Module, LoraLayer):
         init_lora_weights,
         use_rslora,
         use_dora: bool = False,
+        use_spikelora: bool = False,
+        spikelora_v_threshold: float = 1.0,
         use_qalora: bool = False,
         lora_bias: bool = False,
         qalora_group_size: int = 32,
@@ -2006,10 +2056,10 @@ class ParamWrapper(nn.Module, LoraLayer):
             raise ValueError(f"`r` should be a positive integer value but the value passed is {r}")
 
         lora_variant = self.resolve_lora_variant(
-            use_dora=use_dora, use_qalora=use_qalora, qalora_group_size=qalora_group_size
+            use_dora=use_dora, use_qalora=use_qalora, qalora_group_size=qalora_group_size, use_spikelora=use_spikelora
         )
         if lora_variant is not None:
-            raise ValueError(f"lora.{self.__class__.__name__} does not work with LoRA variants like DoRA.")
+            raise ValueError(f"lora.{self.__class__.__name__} does not work with LoRA variants like DoRA and SpikeLoRA.")
 
         self.r[adapter_name] = r
         self.lora_alpha[adapter_name] = lora_alpha

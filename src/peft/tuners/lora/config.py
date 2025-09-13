@@ -351,6 +351,15 @@ class LoraConfig(PeftConfig):
             ranks. Right now, DoRA only supports linear and Conv2D layers. DoRA introduces a bigger overhead than pure
             LoRA, so it is recommended to merge weights for inference. For more information, see
             https://huggingface.co/papers/2402.09353.
+        use_spikelora (`bool`):
+            Enable Spiking Low-Rank Adaptation (SpikeLoRA). This technique applies spiking neurons to the LoRA
+            adaptation process, potentially improving efficiency and performance. SpikeLoRA introduces sparsity
+            through spiking neuron dynamics while maintaining the benefits of low-rank adaptation. Disabled by default.
+            Requires `spikingjelly`, which can be installed with `pip install spikingjelly`.
+        spikelora_v_threshold (`float`):
+            Voltage threshold for spiking neurons in SpikeLoRA. Controls the spiking behavior and sparsity of the
+            adaptation. Only used when `use_spikelora=True`.
+            Requires `spikingjelly`, which can be installed with`pip install spikingjelly`.
         alora_invocation_tokens (`List[int]`):
             If not None, enable <a href='https://huggingface.co/papers/2504.12397'>'Activated LoRA' (aLoRA)</a>, with
             alora_invocation_tokens being the tokenized invocation string for the adapter (must be present in all model
@@ -568,6 +577,28 @@ class LoraConfig(PeftConfig):
                 "magnitude is handled by a separate learnable parameter. This can improve the performance of LoRA, "
                 "especially at low ranks. Right now, DoRA only supports linear and Conv2D layers. DoRA introduces a bigger"
                 "overhead than pure LoRA, so it is recommended to merge weights for inference."
+            )
+        },
+    )
+    use_spikelora: bool = field(
+        default=False,
+        metadata={
+            "help": (
+                "Enable Spiking Low-Rank Adaptation (SpikeLoRA). This technique applies spiking neurons to the LoRA "
+                "adaptation process, potentially improving efficiency and performance. SpikeLoRA introduces sparsity "
+                "through spiking neuron dynamics while maintaining the benefits of low-rank adaptation. "
+                "Disabled by default. "
+                "Requires `spikingjelly`, which can be installed with `pip install spikingjelly`."
+            )
+        },
+    )
+    spikelora_v_threshold: float = field(
+        default=1.0,
+        metadata={
+            "help": (
+                "Voltage threshold for spiking neurons in SpikeLoRA. Controls the spiking behavior and sparsity "
+                "of the adaptation. Only used when `use_spikelora=True`."
+                "Requires `spikingjelly`, which can be installed with `pip install spikingjelly`."
             )
         },
     )
