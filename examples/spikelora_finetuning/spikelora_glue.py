@@ -163,7 +163,7 @@ def train_and_eval(**params) -> float:
             ),
         )
         # setup for quantized training
-        model = prepare_model_for_kbit_training(model, use_gradient_checkpointing=True)
+        model = prepare_model_for_kbit_training(model, use_gradient_checkpointing=True).to(device)
     else:
         model = AutoModelForSequenceClassification.from_pretrained(
             MODEL_NAME,
@@ -203,7 +203,6 @@ def train_and_eval(**params) -> float:
       )
   
     model = get_peft_model(model, config)
-    model.to(device)
 
     # print model type and number of trainable params
     model.print_trainable_parameters()
