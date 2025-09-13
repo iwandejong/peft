@@ -122,9 +122,9 @@ def train_and_eval(**params) -> float:
     val_split = get_validation_split(dataset)
     train_ds = dataset["train"]
     val_ds = dataset[val_split]
-    # Select a small (train: 1000, val: 200) subset for quick testing on M1
-    train_ds = train_ds.select(range(min(5, len(train_ds))))
-    val_ds = val_ds.select(range(min(5, len(val_ds))))
+    if params["debug"]:
+        train_ds = train_ds.select(range(min(5, len(train_ds))))
+        val_ds = val_ds.select(range(min(5, len(val_ds))))
 
     def preprocess(example):
         key1, key2 = TASK_TO_KEYS[params["task"]]
@@ -332,6 +332,7 @@ if __name__ == "__main__":
     parser.add_argument("--v", type=float, default=0.1, help="SpikeLoRA v_threshold")
     parser.add_argument("--quantize", action="store_true", help="Use 4-bit quantization")
     parser.add_argument("--seed", type=float, default=0, help="Random seed")
+    parser.add_argument("--debug", action="store_true", help="Debug mode with small dataset")
     args = parser.parse_args()
     params = vars(args)
 
@@ -346,7 +347,7 @@ if __name__ == "__main__":
     times = []
     for seed in seeds:
         params["seed"] = seed
-        params["experiment"] = f"{'lora' if args.lora else 'spikelora'}-{args.task}-r{params['lora_r']}-lr{params['lr']}-bz{params['bz']}-ep{params['epochs']}-v{params['v']}-sd{params['seed']}{'-quant' if args.quantize else ''}"
+        params["experiment"] = f"{'lora' if args.lora else 'spikelora'}-{args.task}-r{params['lora_r']}-lr{params['lr']}-bz{params['bz']}-ep{params['epochs']}-v{params['v']}-sd{params['seed']}{'-quant' if args.quantize else ''}{'-debug' if args.debug else ''}"
         t = train_and_eval(**params)
         times.append(t)
         print(f"Training time: {t/60:.2f} minutes")
