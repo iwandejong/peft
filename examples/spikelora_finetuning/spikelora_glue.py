@@ -236,6 +236,11 @@ def train_and_eval(**params) -> float:
         dataloader_pin_memory=False if (params["quantize"] and device.type == "cuda") else True, # pin_memory=False when using 4-bit quantization on CUDA
     )
 
+    for name, module in model.named_modules():
+        if "Linear4bit" in str(type(module)):
+            print(name, module.weight.device)
+
+
     def safe_corr(x, y, corr_fn):
         try:
               r = corr_fn(x, y)[0]
