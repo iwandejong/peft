@@ -146,7 +146,7 @@ def train_and_eval(**params) -> float:
     train_enc.set_format(type="torch", columns=cols)
     val_enc.set_format(type="torch", columns=cols)
 
-    if params["quantize"]:
+    if params["quantize"] and device.type == "cuda":
         model = AutoModelForSequenceClassification.from_pretrained(
             MODEL_NAME,
             num_labels=1 if params["task"] == "stsb" else dataset["train"].features["label"].num_classes,
@@ -159,7 +159,8 @@ def train_and_eval(**params) -> float:
                 bnb_4bit_use_double_quant=True,
                 bnb_4bit_quant_type="nf4",
             ),
-        ).to(device)
+            device_map="auto"
+        )
         # setup for quantized training
         model = prepare_model_for_kbit_training(model, use_gradient_checkpointing=True)
     else:
@@ -169,7 +170,8 @@ def train_and_eval(**params) -> float:
             problem_type="regression" if params["task"] == "stsb" else None,
             trust_remote_code=True,
             ignore_mismatched_sizes=True,
-        ).to(device)
+            device_map="auto"
+        )
 
     # target modules for DistilBERT
     target_modules=["q_lin", "v_lin", "out_lin", "lin1", "lin2"]
@@ -201,7 +203,7 @@ def train_and_eval(**params) -> float:
       )
   
     model = get_peft_model(model, config)
-    model.to(device)
+    if not params["quantize"] or device.type != "cuda": model.to(device)
 
     # print model type and number of trainable params
     model.print_trainable_parameters()
@@ -225,6 +227,7 @@ def train_and_eval(**params) -> float:
         warmup_steps=0,
         max_grad_norm=0.1,
         metric_for_best_model="accuracy" if params["task"] not in ["stsb", "cola"] else "matthews_correlation" if params["task"] == "cola" else "pearson",
+        dataloader_pin_memory=False if (params["quantize"] and device.type == "cuda") else True, # pin_memory=False when using 4-bit quantization on CUDA
     )
 
     def safe_corr(x, y, corr_fn):
