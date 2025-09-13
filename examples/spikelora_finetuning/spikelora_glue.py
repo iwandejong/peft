@@ -161,9 +161,9 @@ def train_and_eval(**params) -> float:
                 bnb_4bit_use_double_quant=True,
                 bnb_4bit_quant_type="nf4",
             ),
-        )
+        ).to(device)
         # setup for quantized training
-        model = prepare_model_for_kbit_training(model, use_gradient_checkpointing=True).to(device)
+        model = prepare_model_for_kbit_training(model, use_gradient_checkpointing=True)
     else:
         model = AutoModelForSequenceClassification.from_pretrained(
             MODEL_NAME,
