@@ -185,15 +185,11 @@ def train_and_eval(**params) -> float:
     # target_modules=["q_lin", "v_lin", "out_lin", "lin1", "lin2"]
     # target_modules=["q_lin", "v_lin"]
     target_modules = [
-        "query_proj",
-        "key_proj",
-        "value_proj",
+        "query_proj", "key_proj", "value_proj",
         "attention.output.dense",
-        "intermediate.dense",
-        "output.dense",
-        "pooler.dense",
-        "classifier.out_proj"
+        "intermediate.dense", "output.dense"
     ]
+
 
     # Apply SpikeLoRA
     config = None
