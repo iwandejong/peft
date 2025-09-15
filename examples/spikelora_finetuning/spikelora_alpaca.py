@@ -94,7 +94,7 @@ def train_model(
     dataset = load_dataset(data_path)
 
     def tokenize_function(examples):
-        inputs = tokenizer(examples["text"], padding="max_length", truncation=True, max_length=cutoff_len)
+        inputs = tokenizer("Instruction: " + examples["instruction"] + "\n\nInput: " + examples["input"] + "\n\nOutput: " + examples["output"], padding="max_length", truncation=True, max_length=cutoff_len)
         inputs["labels"] = inputs["input_ids"].copy()  # setting labels for a language modeling task
         return inputs
 
