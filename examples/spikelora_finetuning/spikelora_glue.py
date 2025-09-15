@@ -67,8 +67,7 @@ def get_metric_fn(task):
     else:
         raise ValueError(f"Unsupported task {task}")
 
-# MODEL_NAME = "distilbert-base-uncased"
-MODEL_NAME = "microsoft/deberta-v3-base"
+MODEL_NAME = "distilbert-base-uncased"
 
 def get_validation_split(ds):
     if "validation" in ds:
@@ -156,7 +155,7 @@ def train_and_eval(**params) -> float:
             ),
             bnb_4bit_use_double_quant=True,
             bnb_4bit_quant_type="nf4",
-            llm_int8_skip_modules=["pre_classifier", "classifier", "pooler"],
+            llm_int8_skip_modules=["pre_classifier", "classifier"],
         )
 
         model = AutoModelForSequenceClassification.from_pretrained(
@@ -171,10 +170,6 @@ def train_and_eval(**params) -> float:
         )
         # setup for quantized training
         model = prepare_model_for_kbit_training(model, use_gradient_checkpointing=True)
-
-        for name, module in model.named_modules():
-            if "LayerNorm" in name or "embedding" in name:
-                module.to(torch.float32)
     else:
         model = AutoModelForSequenceClassification.from_pretrained(
             MODEL_NAME,
@@ -186,14 +181,8 @@ def train_and_eval(**params) -> float:
         )
 
     # target modules for DistilBERT
-    # target_modules=["q_lin", "v_lin", "out_lin", "lin1", "lin2"]
+    target_modules=["q_lin", "v_lin", "out_lin", "lin1", "lin2"]
     # target_modules=["q_lin", "v_lin"]
-    target_modules = [
-        "query_proj", "key_proj", "value_proj",
-        "attention.output.dense",
-        "intermediate.dense", "output.dense"
-    ]
-
 
     # Apply SpikeLoRA
     config = None
