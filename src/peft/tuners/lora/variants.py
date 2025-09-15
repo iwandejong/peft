@@ -450,12 +450,12 @@ class SpikeLoraLinearVariant(LoraVariant):
             module.sparsity = {}
 
         from spikingjelly.clock_driven import neuron, surrogate
-        v_threshold = kwargs.get("spikelora_v_threshold", 1.0)
+        v_threshold = kwargs.get("spikelora_v_threshold", 0.1)
         
         module.spikelora_lif[adapter_name] = neuron.LIFNode(
-            tau=2.0, 
-            surrogate_function=surrogate.ATan(alpha=2.0), 
-            v_threshold=v_threshold, 
+            tau=2.0,
+            surrogate_function=surrogate.ATan(alpha=2.0),
+            v_threshold=v_threshold,
             detach_reset=True
         )
 

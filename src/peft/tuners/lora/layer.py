@@ -2084,6 +2084,8 @@ class ParamWrapper(nn.Module, LoraLayer):
             self.scaling[adapter_name] = lora_alpha / r
 
         self.use_dora[adapter_name] = use_dora
+        self.use_spikelora[adapter_name] = use_spikelora
+        self.spikelora_v_threshold[adapter_name] = spikelora_v_threshold
 
         # for inits that require access to the base weight, use gather_param_ctx so that the weight is gathered when using DeepSpeed
         if isinstance(init_lora_weights, str) and init_lora_weights.startswith("pissa"):
