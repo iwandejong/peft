@@ -213,7 +213,6 @@ def train_and_eval(**params) -> float:
       )
   
     model = get_peft_model(model, config)
-    model.to(device)
 
     # print model type and number of trainable params
     model.print_trainable_parameters()
