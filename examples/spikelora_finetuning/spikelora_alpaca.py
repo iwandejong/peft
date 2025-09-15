@@ -93,6 +93,10 @@ def train_model(
     # Load the dataset
     dataset = load_dataset(data_path)
 
+    # select a subset of the dataset for quick testing (remove this in production)
+    dataset["train"] = dataset["train"].shuffle().select(range(1000))
+    dataset["test"] = dataset["test"].shuffle().select(range(200))
+
     def tokenize_function(examples):
         inputs = tokenizer(examples["text"], padding="max_length", truncation=True, max_length=cutoff_len)
         inputs["labels"] = inputs["input_ids"].copy()  # setting labels for a language modeling task
@@ -131,8 +135,8 @@ def train_model(
     trainer = Trainer(
         model=model,
         args=training_args,
-        train_dataset=tokenized_datasets["train"].select(20),
-        eval_dataset=tokenized_datasets["test"].select(20),
+        train_dataset=tokenized_datasets["train"],
+        eval_dataset=tokenized_datasets["test"],
         data_collator=data_collator,
     )
 
