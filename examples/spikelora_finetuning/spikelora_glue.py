@@ -235,7 +235,9 @@ def train_and_eval(**params) -> float:
         logging_strategy="no",
         run_name=None,
         logging_dir=None, 
-        fp16=device.type == "cuda", # use fp16 only on CUDA
+        # fp16=device.type == "cuda", # use fp16 only on CUDA
+        fp16=False,
+        bf16=True,
         remove_unused_columns=False,
         warmup_ratio=0.06,
         warmup_steps=0,
