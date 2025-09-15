@@ -152,19 +152,13 @@ def train_model(
     model.save_pretrained(output_dir)
     tokenizer.save_pretrained(output_dir)
 
-    # test the model
-    inputs = tokenizer("Hello, my dog is cute", return_tensors="pt").to(device)
-    outputs = model.generate(**inputs, max_new_tokens=10)
-    print(tokenizer.decode(outputs[0], skip_special_tokens=True))
-
-
 if __name__ == "__main__":
     import argparse
 
     parser = argparse.ArgumentParser(description="Fine-tune LLaMA with DoRA and PEFT")
     parser.add_argument("--base_model", type=str, default="google/gemma-3-12b-it", help="Base model path or name")
     parser.add_argument(
-        "--data_path", type=str, default="timdettmers/openassistant-guanaco", help="Dataset path or name"
+        "--data_path", type=str, default="yahma/alpaca-cleaned", help="Dataset path or name"
     )
     parser.add_argument(
         "--output_dir", type=str, default="path/to/output", help="Output directory for the fine-tuned model"
