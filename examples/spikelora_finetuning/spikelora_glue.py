@@ -67,7 +67,8 @@ def get_metric_fn(task):
     else:
         raise ValueError(f"Unsupported task {task}")
 
-MODEL_NAME = "distilbert-base-uncased"
+# MODEL_NAME = "distilbert-base-uncased"
+MODEL_NAME = "FacebookAI/roberta-base"
 
 def get_validation_split(ds):
     if "validation" in ds:
