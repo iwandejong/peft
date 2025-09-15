@@ -131,8 +131,8 @@ def train_model(
     trainer = Trainer(
         model=model,
         args=training_args,
-        train_dataset=tokenized_datasets["train"],
-        eval_dataset=tokenized_datasets["test"],
+        train_dataset=tokenized_datasets["train"].select(20),
+        eval_dataset=tokenized_datasets["test"].select(20),
         data_collator=data_collator,
     )
 
