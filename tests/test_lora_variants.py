@@ -27,6 +27,7 @@ from peft.tuners.lora.variants import (
     DoraConv2dVariant,
     DoraEmbeddingVariant,
     DoraLinearVariant,
+    SpikeLoraLinearVariant,
     calculate_alora_offsets,
     get_alora_offsets_for_forward,
     get_alora_offsets_for_generate,
@@ -106,6 +107,9 @@ VARIANT_MAP = {
     "alora": {
         LoraLinear: ALoraLinearVariant,
     },
+    "spikelora": {
+        LoraLinear: SpikeLoraLinearVariant,
+    },
 }
 
 
@@ -119,6 +123,11 @@ TEST_CASES = [
         "alora",
         LoraConfig,
         {"target_modules": ["linear1", "linear2"], "alora_invocation_tokens": [1]},
+    ),
+    (
+        "spikelora",
+        LoraConfig,
+        {"target_modules": ["linear1", "linear2"], "use_spikelora": True, "spikelora_v_threshold": 0.1},
     ),
 ]
 
@@ -167,6 +176,19 @@ class TestLoraVariants:
 
         for layer in layer_names:
             assert getattr(peft_model.base_model.model, layer).lora_magnitude_vector["default"].weight.grad is not None
+
+    def test_spikelora_have_sparsity(self):
+        """Ensure that the parameters added by the SpikeLoRA variant are sparse after backpropagation."""
+        layer_names = ["linear1", "linear2"]
+        peft_config = LoraConfig(target_modules=layer_names, use_spikelora=True, spikelora_v_threshold=0.1)
+        base_model, peft_model = self.custom_model_with_loss_backpropagated(peft_config)
+
+        for layer in layer_names:
+            mod = getattr(peft_model.base_model.model, layer)
+            if hasattr(mod, "sparsity"):
+                sparsity = mod.sparsity.get("default", None)
+                print(f"Layer {layer} sparsity: {sparsity:.2%}")
+                assert sparsity >= 0.5, f"Expected at least 50% sparsity, got {sparsity:.2%}"
 
 
 class TestActivatedLora:
