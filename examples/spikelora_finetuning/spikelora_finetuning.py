@@ -23,6 +23,8 @@ def train_model(
     learning_rate: float,
     cutoff_len: int,
     val_set_size: int,
+    use_spikelora: bool,
+    spikelora_v_threshold: float,
     quantize: bool,
     eval_step: int,
     save_step: int,
@@ -31,8 +33,6 @@ def train_model(
     lora_alpha: int,
     lora_dropout: float,
     lora_target_modules: str,
-    use_spikelora: bool,
-    spikelora_v_threshold: float,
     hub_model_id: str,
     push_to_hub: bool,
 ):
@@ -66,10 +66,11 @@ def train_model(
         model = AutoModelForCausalLM.from_pretrained(base_model, token=hf_token)
     # LoRa config for the PEFT model
     lora_config = LoraConfig(
-        use_spikelora=use_spikelora,
-        spikelora_v_threshold=spikelora_v_threshold,
-        r=lora_r,
+        use_spikelora=use_spikelora, # to use SpikeLoRA
+        spikelora_v_threshold=spikelora_v_threshold, # SpikeLoRA v
+        r=lora_r, # Rank of matrix
         lora_alpha=lora_alpha,
+        use_rslora=True, # recommended to use RSLora with SpikeLoRA
         target_modules=(
             lora_target_modules.split(",")
             if lora_target_modules
@@ -89,9 +90,22 @@ def train_model(
     dataset = load_dataset(data_path)
 
     def tokenize_function(examples):
-        inputs = tokenizer(examples["text"], padding="max_length", truncation=True, max_length=cutoff_len)
-        inputs["labels"] = inputs["input_ids"].copy()  # setting labels for a language modeling task
-        return inputs
+        # Combine instruction, input, and output for each example in the batch
+        full_texts = [
+            "Instruction: " + instr + "\n\nInput: " + inp + "\n\nOutput: " + out
+            for instr, inp, out in zip(examples["instruction"], examples["input"], examples["output"])
+        ]
+
+        tokenized = tokenizer(
+            full_texts,
+            padding="max_length",
+            truncation=True,
+            max_length=cutoff_len
+        )
+
+        # Labels are the same as input_ids for causal LM
+        tokenized["labels"] = tokenized["input_ids"].copy()
+        return tokenized
 
     # Tokenize the dataset and prepare for training
     tokenized_datasets = dataset.map(tokenize_function, batched=True, remove_columns=dataset["train"].column_names)
@@ -127,7 +141,6 @@ def train_model(
         model=model,
         args=training_args,
         train_dataset=tokenized_datasets["train"],
-        eval_dataset=tokenized_datasets["test"],
         data_collator=data_collator,
     )
 
@@ -143,23 +156,24 @@ def train_model(
     model.save_pretrained(output_dir)
     tokenizer.save_pretrained(output_dir)
 
-
 if __name__ == "__main__":
     import argparse
 
     parser = argparse.ArgumentParser(description="Fine-tune LLaMA with DoRA and PEFT")
-    parser.add_argument("--base_model", type=str, default="huggyllama/llama-7b", help="Base model path or name")
+    parser.add_argument("--base_model", type=str, default="google/gemma-3-4b-it", help="Base model path or name")
     parser.add_argument(
-        "--data_path", type=str, default="timdettmers/openassistant-guanaco", help="Dataset path or name"
+        "--data_path", type=str, default="yahma/alpaca-cleaned", help="Dataset path or name"
     )
     parser.add_argument(
         "--output_dir", type=str, default="path/to/output", help="Output directory for the fine-tuned model"
     )
-    parser.add_argument("--batch_size", type=int, default=1, help="Batch size")
+    parser.add_argument("--batch_size", type=int, default=4, help="Batch size")
     parser.add_argument("--num_epochs", type=int, default=1, help="Number of training epochs")
     parser.add_argument("--learning_rate", type=float, default=3e-4, help="Learning rate")
     parser.add_argument("--cutoff_len", type=int, default=512, help="Cutoff length for tokenization")
     parser.add_argument("--val_set_size", type=int, default=500, help="Validation set size")
+    parser.add_argument("--use_spikelora", action="store_true", help="Apply SpikeLoRA")
+    parser.add_argument("--spikelora_v_threshold", type=float, default=0.1, help="SpikeLoRA v_threshold")
     parser.add_argument("--quantize", action="store_true", help="Use quantization")
     parser.add_argument("--eval_step", type=int, default=10, help="Evaluation step interval")
     parser.add_argument("--save_step", type=int, default=100, help="Save step interval")
@@ -170,8 +184,6 @@ if __name__ == "__main__":
     parser.add_argument(
         "--lora_target_modules", type=str, default=None, help="Comma-separated list of target modules for LoRA"
     )
-    parser.add_argument("--use_spikelora", action="store_true", help="Apply SpikeLoRA")
-    parser.add_argument("--spikelora_v_threshold", type=float, default=0.1, help="SpikeLoRA voltage threshold. Default is 0.1")
     parser.add_argument(
         "--hub_model_id",
         type=str,
@@ -189,6 +201,8 @@ if __name__ == "__main__":
         learning_rate=args.learning_rate,
         cutoff_len=args.cutoff_len,
         val_set_size=args.val_set_size,
+        use_spikelora=args.use_spikelora,
+        spikelora_v_threshold=args.spikelora_v_threshold,
         quantize=args.quantize,
         eval_step=args.eval_step,
         save_step=args.save_step,
@@ -197,8 +211,6 @@ if __name__ == "__main__":
         lora_alpha=args.lora_alpha,
         lora_dropout=args.lora_dropout,
         lora_target_modules=args.lora_target_modules,
-        use_spikelora=args.use_spikelora,
-        spikelora_v_threshold=args.spikelora_v_threshold,
         hub_model_id=args.hub_model_id,
         push_to_hub=args.push_to_hub,
     )
