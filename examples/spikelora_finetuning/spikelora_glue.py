@@ -190,7 +190,7 @@ def train_and_eval(**params) -> float:
     # target modules for RoBERTa
     # target_modules=["query", "value", "key"]
     # target modules for DeBERTa
-    target_modules=["query", "key", "value"]
+    target_modules=["query_proj", "key_proj", "value_proj"]
 
     # Apply SpikeLoRA
     config = None
