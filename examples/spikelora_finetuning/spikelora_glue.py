@@ -69,7 +69,7 @@ def get_metric_fn(task):
 
 # MODEL_NAME = "distilbert-base-uncased"
 # MODEL_NAME = "FacebookAI/roberta-base"
-MODEL_NAME = "microsoft/deberta-v3-base"
+MODEL_NAME = "tiiuae/Falcon3-7B-Base"
 
 def get_validation_split(ds):
     if "validation" in ds:
