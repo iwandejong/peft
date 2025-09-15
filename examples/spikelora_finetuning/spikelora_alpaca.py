@@ -145,7 +145,6 @@ def train_model(
         model=model,
         args=training_args,
         train_dataset=tokenized_datasets["train"],
-        eval_dataset=tokenized_datasets["test"],
         data_collator=data_collator,
     )
 
