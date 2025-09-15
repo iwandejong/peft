@@ -94,9 +94,22 @@ def train_model(
     dataset = load_dataset(data_path)
 
     def tokenize_function(examples):
-        inputs = tokenizer("Instruction: " + examples["instruction"] + "\n\nInput: " + examples["input"] + "\n\nOutput: " + examples["output"], padding="max_length", truncation=True, max_length=cutoff_len)
-        inputs["labels"] = inputs["input_ids"].copy()  # setting labels for a language modeling task
-        return inputs
+        # Combine instruction, input, and output for each example in the batch
+        full_texts = [
+            "Instruction: " + instr + "\n\nInput: " + inp + "\n\nOutput: " + out
+            for instr, inp, out in zip(examples["instruction"], examples["input"], examples["output"])
+        ]
+
+        tokenized = tokenizer(
+            full_texts,
+            padding="max_length",
+            truncation=True,
+            max_length=cutoff_len
+        )
+
+        # Labels are the same as input_ids for causal LM
+        tokenized["labels"] = tokenized["input_ids"].copy()
+        return tokenized
 
     # Tokenize the dataset and prepare for training
     tokenized_datasets = dataset.map(tokenize_function, batched=True, remove_columns=dataset["train"].column_names)
