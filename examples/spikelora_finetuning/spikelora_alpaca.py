@@ -152,6 +152,11 @@ def train_model(
     model.save_pretrained(output_dir)
     tokenizer.save_pretrained(output_dir)
 
+    # test the model
+    inputs = tokenizer("Hello, my dog is cute", return_tensors="pt").to(device)
+    outputs = model.generate(**inputs, max_new_tokens=10)
+    print(tokenizer.decode(outputs[0], skip_special_tokens=True))
+
 
 if __name__ == "__main__":
     import argparse
