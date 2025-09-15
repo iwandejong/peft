@@ -333,6 +333,8 @@ if is_bnb_4bit_available():
             init_lora_weights: bool = True,
             use_rslora: bool = False,
             use_dora: bool = False,
+            use_spikelora: bool = False,
+            spikelora_v_threshold: float = 0.1,
             arrow_config: ArrowConfig = None,
             lora_bias: bool = False,
             **kwargs,
@@ -350,6 +352,8 @@ if is_bnb_4bit_available():
                 init_lora_weights=init_lora_weights,
                 use_rslora=use_rslora,
                 use_dora=use_dora,
+                use_spikelora=use_spikelora,
+                spikelora_v_threshold=spikelora_v_threshold,
                 lora_bias=lora_bias,
                 arrow_config=arrow_config,
             )
