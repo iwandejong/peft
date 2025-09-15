@@ -84,6 +84,9 @@ def train_model(
     # get the peft model with LoRa config
     model = get_peft_model(model, lora_config)
 
+    print(f"Trainable parameters: {sum(p.numel() for p in model.parameters() if p.requires_grad)}")
+    print("Wrapped model:", model)
+
     model.to(device)  # MODEL TO GPU/CUDA
     tokenizer.pad_token = tokenizer.eos_token
 
@@ -193,6 +196,8 @@ if __name__ == "__main__":
         cutoff_len=args.cutoff_len,
         val_set_size=args.val_set_size,
         use_dora=args.use_dora,
+        use_spikelora=args.use_spikelora,
+        spikelora_v_threshold=args.spikelora_v_threshold,
         quantize=args.quantize,
         eval_step=args.eval_step,
         save_step=args.save_step,
