@@ -183,8 +183,9 @@ def train_and_eval(**params) -> float:
         )
 
     # target modules for DistilBERT
-    target_modules=["q_lin", "v_lin", "out_lin", "lin1", "lin2"]
+    # target_modules=["q_lin", "v_lin", "out_lin", "lin1", "lin2"]
     # target_modules=["q_lin", "v_lin"]
+    target_modules="all-linear" # for DeBERTa
 
     # Apply SpikeLoRA
     config = None
