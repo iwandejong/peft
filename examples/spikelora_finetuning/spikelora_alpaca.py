@@ -94,8 +94,8 @@ def train_model(
     dataset = load_dataset(data_path)
 
     # select a subset of the dataset for quick testing (remove this in production)
-    dataset["train"] = dataset["train"].shuffle().select(range(1000))
-    dataset["test"] = dataset["test"].shuffle().select(range(200))
+    dataset["train"] = dataset["train"].shuffle().select(range(10))
+    dataset["test"] = dataset["test"].shuffle().select(range(2))
 
     def tokenize_function(examples):
         inputs = tokenizer(examples["text"], padding="max_length", truncation=True, max_length=cutoff_len)
