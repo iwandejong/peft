@@ -182,8 +182,10 @@ def train_and_eval(**params) -> float:
         )
 
     # target modules for DistilBERT
-    target_modules=["q_lin", "v_lin", "out_lin", "lin1", "lin2"]
+    # target_modules=["q_lin", "v_lin", "out_lin", "lin1", "lin2"]
     # target_modules=["q_lin", "v_lin"]
+    # target modules for RoBERTa
+    target_modules=["query", "value", "key"]
 
     # Apply SpikeLoRA
     config = None
