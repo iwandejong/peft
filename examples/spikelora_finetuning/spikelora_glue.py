@@ -171,6 +171,10 @@ def train_and_eval(**params) -> float:
         )
         # setup for quantized training
         model = prepare_model_for_kbit_training(model, use_gradient_checkpointing=True)
+
+        for name, module in model.named_modules():
+            if "LayerNorm" in name or "embedding" in name:
+                module.to(torch.float32)
     else:
         model = AutoModelForSequenceClassification.from_pretrained(
             MODEL_NAME,
@@ -235,9 +239,7 @@ def train_and_eval(**params) -> float:
         logging_strategy="no",
         run_name=None,
         logging_dir=None, 
-        # fp16=device.type == "cuda", # use fp16 only on CUDA
-        fp16=False,
-        bf16=True,
+        fp16=device.type == "cuda", # use fp16 only on CUDA
         remove_unused_columns=False,
         warmup_ratio=0.06,
         warmup_steps=0,
