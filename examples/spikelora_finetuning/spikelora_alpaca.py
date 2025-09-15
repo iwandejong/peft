@@ -21,7 +21,8 @@ device = torch.device("cuda" if torch.cuda.is_available() else "mps" if torch.ba
 print(f"Using device: {device}")
 
 # --- Model & Tokenizer ---
-MODEL_NAME = "meta-llama/Llama-2-7b"
+# MODEL_NAME = "meta-llama/Llama-2-7b"
+MODEL_NAME = "tiiuae/Falcon3-7B-Base"
 tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
 tokenizer.pad_token = tokenizer.eos_token  # important for causal LM
 
