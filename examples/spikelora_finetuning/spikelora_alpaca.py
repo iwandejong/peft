@@ -164,7 +164,7 @@ if __name__ == "__main__":
     import argparse
 
     parser = argparse.ArgumentParser(description="Fine-tune LLaMA with DoRA and PEFT")
-    parser.add_argument("--base_model", type=str, default="google/gemma-3-12b-it", help="Base model path or name")
+    parser.add_argument("--base_model", type=str, default="google/gemma-3-4b-it", help="Base model path or name")
     parser.add_argument(
         "--data_path", type=str, default="yahma/alpaca-cleaned", help="Dataset path or name"
     )
