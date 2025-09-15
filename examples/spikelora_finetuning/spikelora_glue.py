@@ -68,7 +68,8 @@ def get_metric_fn(task):
         raise ValueError(f"Unsupported task {task}")
 
 # MODEL_NAME = "distilbert-base-uncased"
-MODEL_NAME = "FacebookAI/roberta-base"
+# MODEL_NAME = "FacebookAI/roberta-base"
+MODEL_NAME = "microsoft/deberta-v3-base"
 
 def get_validation_split(ds):
     if "validation" in ds:
@@ -181,11 +182,15 @@ def train_and_eval(**params) -> float:
             device_map="auto",
         )
 
+    print("Before wrapping:", model)
+
     # target modules for DistilBERT
     # target_modules=["q_lin", "v_lin", "out_lin", "lin1", "lin2"]
     # target_modules=["q_lin", "v_lin"]
     # target modules for RoBERTa
-    target_modules=["query", "value", "key"]
+    # target_modules=["query", "value", "key"]
+    # target modules for DeBERTa
+    target_modules=["query", "key", "value", "dense"]
 
     # Apply SpikeLoRA
     config = None
