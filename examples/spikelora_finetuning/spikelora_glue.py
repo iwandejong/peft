@@ -166,8 +166,7 @@ def train_and_eval(**params) -> float:
             trust_remote_code=True,
             ignore_mismatched_sizes=True,
             quantization_config=q_config,
-            device_map="auto",
-            torch_dtype=torch.bfloat16 if torch.cuda.is_available() and torch.cuda.is_bf16_supported() else torch.float16
+            device_map="auto"
         )
         # setup for quantized training
         model = prepare_model_for_kbit_training(model, use_gradient_checkpointing=True)
