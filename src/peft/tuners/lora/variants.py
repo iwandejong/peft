@@ -26,7 +26,7 @@ from peft.utils.other import transpose
 from .arrow import ArrowLoraLinearLayer
 from .config import PeftConfig
 from .dora import DoraConv1dLayer, DoraConv2dLayer, DoraConv3dLayer, DoraEmbeddingLayer, DoraLinearLayer
-from .layer import Conv1d, Conv2d, Conv3d, Embedding, Linear, LoraVariant, _ConvNd
+from .layer import Conv1d, Conv2d, Conv3d, Embedding, Linear, LoraVariant, _ConvNd, Embedding
 
 
 class ArrowLinearVariant(LoraVariant):
@@ -438,6 +438,65 @@ class DoraConv3dVariant(_DoraConvNdVariant):
         dora_layer = DoraConv3dLayer(fan_in_fan_out=False)
         _DoraConvNdVariant.init_convd_variant(module, adapter_name, dora_layer=dora_layer)
 
+
+class SpikeLoraLinearVariant(LoraVariant):
+    @staticmethod
+    def init(module: Linear, adapter_name: str, **kwargs: Any) -> None:
+        if not hasattr(module, 'spikelora_lif'):
+            module.adapter_layer_names = module.adapter_layer_names[:] + ("spikelora_lif",)
+            module.spikelora_lif = nn.ModuleDict({})
+
+            # logging sparsity
+            module.sparsity = {}
+
+        from spikingjelly.clock_driven import neuron, surrogate
+        v_threshold = kwargs.get("spikelora_v_threshold", 0.1)
+        
+        module.spikelora_lif[adapter_name] = neuron.LIFNode(
+            tau=2.0,
+            surrogate_function=surrogate.ATan(alpha=2.0),
+            v_threshold=v_threshold,
+            detach_reset=True
+        )
+
+    @staticmethod
+    def forward(module: Linear, active_adapter: str, x: torch.Tensor, result: torch.Tensor, **kwargs) -> torch.Tensor:
+        lora_A = module.lora_A[active_adapter]
+        lora_B = module.lora_B[active_adapter]
+        dropout = module.lora_dropout[active_adapter]
+        scaling = module.scaling[active_adapter]
+        lif = module.spikelora_lif[active_adapter]
+
+        if isinstance(dropout, nn.Identity) or not module.training:
+            x = x
+        else:
+            x = dropout(x)
+
+        # Apply LoRA with SpikeLoRA directly
+        lora_out = lora_A(x)
+        lora_out = dropout(lora_out)
+        
+        # Pointwise spiking: Reset LIF for each forward pass
+        lif.reset()
+        spikes = lif(lora_out)
+        lora_out = lora_out * spikes  # gated by spikes
+        module.sparsity[active_adapter] = (spikes == 0).float().mean().item()
+        
+        lora_out = lora_B(lora_out) * scaling
+        
+        return result + lora_out
+
+    @staticmethod
+    def merge_safe(module: Linear, active_adapter: str, orig_weight: torch.Tensor) -> torch.Tensor:
+        raise NotImplementedError("SpikeLoRA does not support safe merging.")
+    
+    @staticmethod
+    def merge_unsafe(module: Linear, active_adapter: str, orig_weight: torch.Tensor) -> None:
+        raise NotImplementedError("SpikeLoRA does not support merging.")
+    
+    @staticmethod
+    def unmerge(module: Linear, active_adapter: str, orig_weight: torch.Tensor) -> torch.Tensor:
+        raise NotImplementedError("SpikeLoRA does not support unmerging.")
 
 class QALoraLinearVariant(LoraVariant):
     @staticmethod

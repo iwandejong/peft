@@ -45,6 +45,8 @@ if is_bnb_available():
             use_rslora: bool = False,
             use_alora: bool = False,
             use_dora: bool = False,
+            use_spikelora: bool = False,
+            spikelora_v_threshold: float = 0.1,
             arrow_config: ArrowConfig = None,
             lora_bias: bool = False,
             **kwargs,
@@ -63,27 +65,32 @@ if is_bnb_available():
                 use_rslora=use_rslora,
                 use_dora=use_dora,
                 use_alora=use_alora,
+                use_spikelora=use_spikelora,
+                spikelora_v_threshold=spikelora_v_threshold,
                 lora_bias=lora_bias,
                 arrow_config=arrow_config,
             )
 
         def resolve_lora_variant(
-            self, *, arrow_config: ArrowConfig, use_dora: bool, use_alora: bool, **kwargs
+            self, *, arrow_config: ArrowConfig, use_dora: bool, use_alora: bool, use_spikelora: bool, **kwargs
         ) -> Optional[LoraVariant]:
             if arrow_config is not None:
                 from .variants import ArrowLinearVariant
-
                 return ArrowLinearVariant()
 
-            if not use_dora and not use_alora:
-                return None
-
-            from .variants import ALoraLinearVariant, DoraLinearVariant
-
             if use_alora:
+                from .variants import ALoraLinearVariant
                 return ALoraLinearVariant()
-            else:
+            
+            if use_dora:
+                from .variants import DoraLinearVariant
                 return DoraLinearVariant()
+            
+            if use_spikelora:
+                from .variants import SpikeLoraLinearVariant
+                return SpikeLoraLinearVariant()
+            
+            return None
 
         def merge(self, safe_merge: bool = False, adapter_names: Optional[list[str]] = None) -> None:
             """
@@ -333,6 +340,8 @@ if is_bnb_4bit_available():
             init_lora_weights: bool = True,
             use_rslora: bool = False,
             use_dora: bool = False,
+            use_spikelora: bool = False,
+            spikelora_v_threshold: float = 0.1,
             arrow_config: ArrowConfig = None,
             lora_bias: bool = False,
             **kwargs,
@@ -350,27 +359,32 @@ if is_bnb_4bit_available():
                 init_lora_weights=init_lora_weights,
                 use_rslora=use_rslora,
                 use_dora=use_dora,
+                use_spikelora=use_spikelora,
+                spikelora_v_threshold=spikelora_v_threshold,
                 lora_bias=lora_bias,
                 arrow_config=arrow_config,
             )
 
         def resolve_lora_variant(
-            self, *, arrow_config: ArrowConfig, use_dora: bool, use_alora: bool, **kwargs
+            self, *, arrow_config: ArrowConfig, use_dora: bool, use_alora: bool, use_spikelora: bool, **kwargs
         ) -> Optional[LoraVariant]:
             if arrow_config is not None:
                 from .variants import ArrowLinearVariant
-
                 return ArrowLinearVariant()
 
-            if not use_dora and not use_alora:
-                return None
-
-            from .variants import ALoraLinearVariant, DoraLinearVariant
-
             if use_alora:
+                from .variants import ALoraLinearVariant
                 return ALoraLinearVariant()
-            else:
+            
+            if use_dora:
+                from .variants import DoraLinearVariant
                 return DoraLinearVariant()
+            
+            if use_spikelora:
+                from .variants import SpikeLoraLinearVariant
+                return SpikeLoraLinearVariant()
+            
+            return None
 
         def merge(self, safe_merge: bool = False, adapter_names: Optional[list[str]] = None) -> None:
             """
