@@ -30,9 +30,16 @@ python3 -c "import torch; print(torch.version.cuda, torch.cuda.is_available())"
 TASK=${TASK:-cola}
 PROJECT=${PROJECT:-"glue"}
 LORA=${LORA:-""}
-SPIKE=${SPIKE:-""}
 SEED=${SEED:-""}
 DROPOUT=${DROPOUT:-""}
+
+if [ -z "$LORA" ]
+then
+    echo "Not using LoRA"
+else
+    echo "Using LoRA"
+    LORA="--lora"
+fi
 
 if [ -z "$SEED" ]
 then
@@ -42,5 +49,5 @@ else
     LORA="$LORA --seed $SEED"
 fi
 
-echo "Running: python3 spikelora_finetuning/deberta_chpc.py --task $TASK --project $PROJECT $SPIKE $LORA --dropout $DROPOUT"
-python3 spikelora_finetuning/deberta_chpc.py --task $TASK --project $PROJECT $SPIKE $LORA --dropout $DROPOUT > ${PBS_JOBNAME}.log 2>&1
+echo "Running: python3 spikelora_finetuning/deberta_chpc.py --task $TASK --project $PROJECT $LORA --dropout $DROPOUT"
+python3 spikelora_finetuning/deberta_chpc.py --task $TASK --project $PROJECT $LORA --dropout $DROPOUT > ${PBS_JOBNAME}.log 2>&1
