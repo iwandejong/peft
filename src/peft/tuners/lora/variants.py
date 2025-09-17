@@ -336,7 +336,7 @@ class SpikeLoraLinearVariant(LoraVariant):
         module.spikelora_lif[adapter_name] = neuron.LIFNode(
             tau=2.0, 
             surrogate_function=surrogate.ATan(alpha=2.0), 
-            v_threshold=v_threshold, 
+            v_threshold=nn.Parameter(torch.tensor(v_threshold)), # v_threshold as a learnable parameter
             detach_reset=True
         )
 

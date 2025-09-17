@@ -85,26 +85,32 @@ qsub -v TASK=mnli,LORA=true,WANDB_PROJECT=chpc deberta_12.sh -N mnli-lora
 # qsub -v TASK=mnli,SEED=5 deberta_4.sh -N mnli-spike -l walltime=04:00:00 -l select=1:host=gpu2006:ncpus=9:ngpus=1
 
 # Dropouts
-qsub -v PROJECT=dropout,TASK=cola,LORA=true,SEED=1,DROPOUT=0.025 deberta_4.sh -N dropout-0.025 -l walltime=01:00:00
-qsub -v PROJECT=dropout,TASK=cola,LORA=true,SEED=2,DROPOUT=0.025 deberta_4.sh -N dropout-0.025 -l walltime=01:00:00
-qsub -v PROJECT=dropout,TASK=cola,LORA=true,SEED=3,DROPOUT=0.025 deberta_4.sh -N dropout-0.025 -l walltime=01:00:00
-qsub -v PROJECT=dropout,TASK=cola,LORA=true,SEED=4,DROPOUT=0.025 deberta_4.sh -N dropout-0.025 -l walltime=01:00:00
-qsub -v PROJECT=dropout,TASK=cola,LORA=true,SEED=5,DROPOUT=0.025 deberta_4.sh -N dropout-0.025 -l walltime=01:00:00
+# qsub -v PROJECT=dropout,TASK=cola,SEED=1,DROPOUT=0.025 deberta_4.sh -N dropout-0.025 -l walltime=01:00:00
+# qsub -v PROJECT=dropout,TASK=cola,SEED=2,DROPOUT=0.025 deberta_4.sh -N dropout-0.025 -l walltime=01:00:00
+# qsub -v PROJECT=dropout,TASK=cola,SEED=3,DROPOUT=0.025 deberta_4.sh -N dropout-0.025 -l walltime=01:00:00
+# qsub -v PROJECT=dropout,TASK=cola,SEED=4,DROPOUT=0.025 deberta_4.sh -N dropout-0.025 -l walltime=01:00:00
+# qsub -v PROJECT=dropout,TASK=cola,SEED=5,DROPOUT=0.025 deberta_4.sh -N dropout-0.025 -l walltime=01:00:00
 
-qsub -v PROJECT=dropout,TASK=cola,LORA=true,SEED=1,DROPOUT=0.05 deberta_4.sh -N dropout-0.05 -l walltime=01:00:00
-qsub -v PROJECT=dropout,TASK=cola,LORA=true,SEED=2,DROPOUT=0.05 deberta_4.sh -N dropout-0.05 -l walltime=01:00:00
-qsub -v PROJECT=dropout,TASK=cola,LORA=true,SEED=3,DROPOUT=0.05 deberta_4.sh -N dropout-0.05 -l walltime=01:00:00
-qsub -v PROJECT=dropout,TASK=cola,LORA=true,SEED=4,DROPOUT=0.05 deberta_4.sh -N dropout-0.05 -l walltime=01:00:00
-qsub -v PROJECT=dropout,TASK=cola,LORA=true,SEED=5,DROPOUT=0.05 deberta_4.sh -N dropout-0.05 -l walltime=01:00:00
+# qsub -v PROJECT=dropout,TASK=cola,SEED=1,DROPOUT=0.05 deberta_4.sh -N dropout-0.05 -l walltime=01:00:00
+# qsub -v PROJECT=dropout,TASK=cola,SEED=2,DROPOUT=0.05 deberta_4.sh -N dropout-0.05 -l walltime=01:00:00
+# qsub -v PROJECT=dropout,TASK=cola,SEED=3,DROPOUT=0.05 deberta_4.sh -N dropout-0.05 -l walltime=01:00:00
+# qsub -v PROJECT=dropout,TASK=cola,SEED=4,DROPOUT=0.05 deberta_4.sh -N dropout-0.05 -l walltime=01:00:00
+# qsub -v PROJECT=dropout,TASK=cola,SEED=5,DROPOUT=0.05 deberta_4.sh -N dropout-0.05 -l walltime=01:00:00
 
-qsub -v PROJECT=dropout,TASK=cola,LORA=true,SEED=1,DROPOUT=0.075 deberta_4.sh -N dropout-0.075 -l walltime=01:00:00
-qsub -v PROJECT=dropout,TASK=cola,LORA=true,SEED=2,DROPOUT=0.075 deberta_4.sh -N dropout-0.075 -l walltime=01:00:00
-qsub -v PROJECT=dropout,TASK=cola,LORA=true,SEED=3,DROPOUT=0.075 deberta_4.sh -N dropout-0.075 -l walltime=01:00:00
-qsub -v PROJECT=dropout,TASK=cola,LORA=true,SEED=4,DROPOUT=0.075 deberta_4.sh -N dropout-0.075 -l walltime=01:00:00
-qsub -v PROJECT=dropout,TASK=cola,LORA=true,SEED=5,DROPOUT=0.075 deberta_4.sh -N dropout-0.075 -l walltime=01:00:00
+# qsub -v PROJECT=dropout,TASK=cola,SEED=1,DROPOUT=0.075 deberta_4.sh -N dropout-0.075 -l walltime=01:00:00
+# qsub -v PROJECT=dropout,TASK=cola,SEED=2,DROPOUT=0.075 deberta_4.sh -N dropout-0.075 -l walltime=01:00:00
+# qsub -v PROJECT=dropout,TASK=cola,SEED=3,DROPOUT=0.075 deberta_4.sh -N dropout-0.075 -l walltime=01:00:00
+# qsub -v PROJECT=dropout,TASK=cola,SEED=4,DROPOUT=0.075 deberta_4.sh -N dropout-0.075 -l walltime=01:00:00
+# qsub -v PROJECT=dropout,TASK=cola,SEED=5,DROPOUT=0.075 deberta_4.sh -N dropout-0.075 -l walltime=01:00:00
 
-qsub -v PROJECT=dropout,TASK=cola,LORA=true,SEED=1,DROPOUT=0.1 deberta_4.sh -N dropout-0.1 -l walltime=01:00:00
-qsub -v PROJECT=dropout,TASK=cola,LORA=true,SEED=2,DROPOUT=0.1 deberta_4.sh -N dropout-0.1 -l walltime=01:00:00
-qsub -v PROJECT=dropout,TASK=cola,LORA=true,SEED=3,DROPOUT=0.1 deberta_4.sh -N dropout-0.1 -l walltime=01:00:00
-qsub -v PROJECT=dropout,TASK=cola,LORA=true,SEED=4,DROPOUT=0.1 deberta_4.sh -N dropout-0.1 -l walltime=01:00:00
-qsub -v PROJECT=dropout,TASK=cola,LORA=true,SEED=5,DROPOUT=0.1 deberta_4.sh -N dropout-0.1 -l walltime=01:00:00
+# qsub -v PROJECT=dropout,TASK=cola,SEED=1,DROPOUT=0.1 deberta_4.sh -N dropout-0.1 -l walltime=01:00:00
+# qsub -v PROJECT=dropout,TASK=cola,SEED=2,DROPOUT=0.1 deberta_4.sh -N dropout-0.1 -l walltime=01:00:00
+# qsub -v PROJECT=dropout,TASK=cola,SEED=3,DROPOUT=0.1 deberta_4.sh -N dropout-0.1 -l walltime=01:00:00
+# qsub -v PROJECT=dropout,TASK=cola,SEED=4,DROPOUT=0.1 deberta_4.sh -N dropout-0.1 -l walltime=01:00:00
+# qsub -v PROJECT=dropout,TASK=cola,SEED=5,DROPOUT=0.1 deberta_4.sh -N dropout-0.1 -l walltime=01:00:00
+
+# qsub -v PROJECT=dropout,TASK=cola,SEED=1,DROPOUT=0.0 deberta_4.sh -N dropout-0.0 -l walltime=01:00:00
+# qsub -v PROJECT=dropout,TASK=cola,SEED=2,DROPOUT=0.0 deberta_4.sh -N dropout-0.0 -l walltime=01:00:00
+# qsub -v PROJECT=dropout,TASK=cola,SEED=3,DROPOUT=0.0 deberta_4.sh -N dropout-0.0 -l walltime=01:00:00
+# qsub -v PROJECT=dropout,TASK=cola,SEED=4,DROPOUT=0.0 deberta_4.sh -N dropout-0.0 -l walltime=01:00:00
+# qsub -v PROJECT=dropout,TASK=cola,SEED=5,DROPOUT=0.0 deberta_4.sh -N dropout-0.0 -l walltime=01:00:00

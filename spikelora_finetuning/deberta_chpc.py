@@ -38,9 +38,16 @@ class SparsityLoggerCallback(TrainerCallback):
                     val = v.mean().item() if isinstance(v, torch.Tensor) else v
                     sparsity_list.append(val)
                     sparsity_dict[f"sparsity/{name}"] = val
+            if hasattr(mod, "spikelora_lif"):
+                for adapter, lif in mod.spikelora_lif.items():
+                    if hasattr(lif, "v_threshold"):
+                        val = lif.v_threshold.item() if isinstance(lif.v_threshold, torch.Tensor) else lif.v_threshold
+                        sparsity_dict[f"sparsity/{name}/v_threshold"] = val
 
         global_sparsity = float(torch.tensor(sparsity_list).mean()) if sparsity_list else 0.0
+        global_v_thresholds = [v for k, v in sparsity_dict.items() if k.endswith("v_threshold")]
         wandb.log({"train/global_sparsity": global_sparsity, **sparsity_dict, "step": state.global_step})
+        wandb.log({"train/global_v_threshold": float(torch.tensor(global_v_thresholds).mean()) if global_v_thresholds else 0.0, "step": state.global_step})
 
 def get_metric_fn(task):
     if task in ["cola"]:  # Matthew's correlation
