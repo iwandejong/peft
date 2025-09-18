@@ -120,3 +120,7 @@ qsub -v PROJECT=v,TASK=cola,SEED=2 deberta_4.sh -N param-v -l walltime=01:00:00
 qsub -v PROJECT=v,TASK=cola,SEED=3 deberta_4.sh -N param-v -l walltime=01:00:00
 qsub -v PROJECT=v,TASK=cola,SEED=4 deberta_4.sh -N param-v -l walltime=01:00:00
 qsub -v PROJECT=v,TASK=cola,SEED=5 deberta_4.sh -N param-v -l walltime=01:00:00
+
+
+qsub -v deberta_performance.sh -N performance -l walltime=01:00:00
+qsub -v LORA=true deberta_performance.sh -N performance-l -l walltime=01:00:00
