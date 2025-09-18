@@ -114,3 +114,9 @@ qsub -v TASK=mnli,LORA=true,WANDB_PROJECT=chpc deberta_12.sh -N mnli-lora
 # qsub -v PROJECT=dropout,TASK=cola,SEED=3,DROPOUT=0.0 deberta_4.sh -N dropout-0.0 -l walltime=01:00:00
 # qsub -v PROJECT=dropout,TASK=cola,SEED=4,DROPOUT=0.0 deberta_4.sh -N dropout-0.0 -l walltime=01:00:00
 # qsub -v PROJECT=dropout,TASK=cola,SEED=5,DROPOUT=0.0 deberta_4.sh -N dropout-0.0 -l walltime=01:00:00
+
+qsub -v PROJECT=v,TASK=cola,SEED=1 deberta_4.sh -N param-v -l walltime=01:00:00
+qsub -v PROJECT=v,TASK=cola,SEED=2 deberta_4.sh -N param-v -l walltime=01:00:00
+qsub -v PROJECT=v,TASK=cola,SEED=3 deberta_4.sh -N param-v -l walltime=01:00:00
+qsub -v PROJECT=v,TASK=cola,SEED=4 deberta_4.sh -N param-v -l walltime=01:00:00
+qsub -v PROJECT=v,TASK=cola,SEED=5 deberta_4.sh -N param-v -l walltime=01:00:00

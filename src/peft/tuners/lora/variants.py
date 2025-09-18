@@ -336,7 +336,7 @@ class SpikeLoraLinearVariant(LoraVariant):
         module.spikelora_lif[adapter_name] = neuron.LIFNode(
             tau=2.0, 
             surrogate_function=surrogate.ATan(alpha=2.0), 
-            v_threshold=nn.Parameter(torch.tensor(v_threshold)), # v_threshold as a learnable parameter
+            v_threshold=v_threshold,
             detach_reset=True
         )
 
@@ -353,6 +353,10 @@ class SpikeLoraLinearVariant(LoraVariant):
         else:
             x = dropout(x)
 
+        # torch.randn(batch_size, seq_len, d_in, device=device)
+        bs, sl, _ = x.shape
+        dout, _ = lora_B.shape
+
         # Apply LoRA with spiking directly
         lora_out = lora_A(x)
         lora_out = dropout(lora_out)
@@ -360,10 +364,17 @@ class SpikeLoraLinearVariant(LoraVariant):
         # Reset LIF for each forward pass (pointwise spiking)
         lif.reset()
         spikes = lif(lora_out)
-        lora_out = lora_out * spikes  # gated by spikes
+        # lora_out = lora_out * spikes  # gated by spikes
+        # lora_out = lora_B(lora_out) * scaling
+
+        lora_out = lora_out * spikes
         module.sparsity[active_adapter] = (spikes == 0).float().mean().item()
-        
-        lora_out = lora_B(lora_out) * scaling
+        lora_out = lora_out.reshape(bs * sl, module.r[active_adapter]).to_sparse()
+
+        up_proj = torch.sparse.mm(lora_out, lora_B.T)
+        up_proj = up_proj.reshape(bs, sl, dout)
+
+        lora_out = up_proj * scaling
         
         return result + lora_out
 

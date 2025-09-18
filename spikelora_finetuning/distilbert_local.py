@@ -1,5 +1,6 @@
 import os
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
+os.environ["PYTORCH_ENABLE_MPS_FALLBACK"] = "1"
 
 import time
 from datasets import load_from_disk, load_dataset
