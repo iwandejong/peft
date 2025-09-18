@@ -371,8 +371,9 @@ class SpikeLoraLinearVariant(LoraVariant):
         module.sparsity[active_adapter] = (spikes == 0).float().mean().item()
         lora_out = lora_out.reshape(bs * sl, module.r[active_adapter]).to_sparse()
 
-        up_proj = torch.sparse.mm(lora_out, lora_B.weight.T)
+        up_proj = torch.sparse.mm(lora_out.float(), lora_B.weight.T.float())
         up_proj = up_proj.reshape(bs, sl, dout)
+        up_proj = up_proj.to(x.dtype)
 
         lora_out = up_proj * scaling
         
