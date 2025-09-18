@@ -18,6 +18,7 @@ from typing import Any
 import torch
 from accelerate.utils.imports import is_xpu_available
 from torch import nn
+from torch.amp import autocast
 
 from peft.utils.other import transpose
 
@@ -371,7 +372,8 @@ class SpikeLoraLinearVariant(LoraVariant):
         module.sparsity[active_adapter] = (spikes == 0).float().mean().item()
         lora_out = lora_out.reshape(bs * sl, module.r[active_adapter]).to_sparse()
 
-        up_proj = torch.sparse.mm(lora_out.float(), lora_B.weight.T.float())
+        with autocast('cuda', enabled=False, dtype=torch.float32):
+            up_proj = torch.sparse.mm(lora_out, lora_B.T)
         up_proj = up_proj.reshape(bs, sl, dout)
         up_proj = up_proj.to(x.dtype)
 
