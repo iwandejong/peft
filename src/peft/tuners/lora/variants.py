@@ -355,7 +355,7 @@ class SpikeLoraLinearVariant(LoraVariant):
 
         # torch.randn(batch_size, seq_len, d_in, device=device)
         bs, sl, _ = x.shape
-        dout, _ = lora_B.shape
+        dout = lora_B.out_features
 
         # Apply LoRA with spiking directly
         lora_out = lora_A(x)
