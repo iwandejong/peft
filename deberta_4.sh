@@ -32,6 +32,7 @@ PROJECT=${PROJECT:-"glue"}
 LORA=${LORA:-""}
 SEED=${SEED:-""}
 DROPOUT=${DROPOUT:-""}
+LR=${LR:-""}
 
 if [ -z "$LORA" ]
 then
@@ -49,5 +50,5 @@ else
     LORA="$LORA --seed $SEED"
 fi
 
-echo "Running: python3 spikelora_finetuning/deberta_chpc.py --task $TASK --project $PROJECT $LORA --dropout $DROPOUT"
+echo "Running: python3 spikelora_finetuning/deberta_chpc.py --task $TASK --project $PROJECT $LORA --dropout $DROPOUT --lr $LR"
 python3 spikelora_finetuning/deberta_chpc.py --task $TASK --project $PROJECT $LORA --dropout $DROPOUT > ${PBS_JOBNAME}.log 2>&1
