@@ -150,22 +150,24 @@ def train_and_eval(task: str, params: dict, seed: int = 42, lora: bool = False) 
     if lora:
       print("Using standard LoRA")
       config =  LoraConfig( 
-        r=params["lora_r"],
-        lora_alpha=params["lora_r"],
-        lora_dropout=params["lora_dropout"],
+        r=params["rank"],
+        lora_alpha=params["rank"],
+        lora_dropout=params["dropout"],
         target_modules="all-linear",
         task_type="SEQ_CLS",
+        use_rslora=True
       )
     else:
       print("Using SpikeLoRA")
       config = LoraConfig(
-        r=params["lora_r"],
-        lora_alpha=params["lora_r"],
-        lora_dropout=params["lora_dropout"],
+        r=params["rank"],
+        lora_alpha=params["rank"],
+        lora_dropout=params["dropout"],
         target_modules="all-linear",
         task_type="SEQ_CLS",
         use_spikelora=True,
-        spikelora_v_threshold=0.01
+        use_rslora=True,
+        spikelora_v_threshold=params["v_threshold"],
       )
   
     model = get_peft_model(model, config)
@@ -183,15 +185,16 @@ def train_and_eval(task: str, params: dict, seed: int = 42, lora: bool = False) 
         learning_rate=params["learning_rate"],
         num_train_epochs=params["num_epochs"],
         save_strategy="no",
-        report_to="wandb",
+        # report_to="wandb",
         logging_steps=100,
-        run_name=f"spikelora_finetuning_{task}_{int(time.time())}",
-        # fp16=True,
+        fp16=device.type == "cuda", # use fp16 only on CUDA
         remove_unused_columns=False,
         warmup_ratio=0.06,
         warmup_steps=0,
-        max_grad_norm=0.1,
-        metric_for_best_model="accuracy" if task not in ["stsb", "cola"] else "matthews_correlation" if task == "cola" else "pearson",
+        max_grad_norm=1.0,
+        weight_decay=0.01,
+        metric_for_best_model="accuracy" if params["task"] not in ["stsb", "cola"] else "matthews_correlation" if params["task"] == "cola" else "pearson",
+        gradient_accumulation_steps=params["gradient_accumulation_steps"] if "gradient_accumulation_steps" in params else 1
     )
 
     def safe_corr(x, y, corr_fn):
@@ -255,12 +258,22 @@ def train_and_eval(task: str, params: dict, seed: int = 42, lora: bool = False) 
 
 # --- Run with param setup ---
 def run(task: str, lora: bool = False):
-    seeds = [100]
+    seeds = [1,2,3,4,5]
     from best_params import BEST_PARAMS
     if task not in BEST_PARAMS:
         raise ValueError(f"No best params for task {task}")
     params = BEST_PARAMS[task]
-    # params["num_epochs"] *= 3  # run longer
+    params["gradient_accumulation_steps"] = 2  # use grad accumulation
+    params["batch_size"] = max(1, params["batch_size"] // params["gradient_accumulation_steps"])
+    params["task"] = task
+    params["effective_batch_size"] = params["batch_size"] * params["gradient_accumulation_steps"]
+
+    params["rank"] = args.r if args.r is not None else BEST_PARAMS[params["task"]]["lora_r"]
+    params["dropout"] = args.dropout if args.dropout is not None else BEST_PARAMS[params["task"]]["lora_dropout"]
+    params["v_threshold"] = BEST_PARAMS[params["task"]]["v_threshold"]
+    params["learning_rate"] = args.lr if args.lr is not None else BEST_PARAMS[params["task"]]["learning_rate"]
+    params["num_epochs"] = BEST_PARAMS[params["task"]]["num_epochs"]
+
     print(f"Running task {task} with params: {params}")
     scores = []
     for seed in seeds:
@@ -277,5 +290,9 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--task", type=str, default="cola", help="GLUE task name")
     parser.add_argument("--lora", action="store_true", help="Use LoRA instead of SpikeLoRA")
+    parser.add_argument("--r", type=int, default=None, help="LoRA rank (overrides best param)")
+    parser.add_argument("--lr", type=float, default=None, help="Learning rate (overrides best param)")
+    parser.add_argument("--seed", type=int, default=None, help="Random seed (overrides loop)")
+    parser.add_argument("--dropout", type=float, default=None, help="LoRA dropout (overrides best param)")
     args = parser.parse_args()
     run(args.task, args.lora)

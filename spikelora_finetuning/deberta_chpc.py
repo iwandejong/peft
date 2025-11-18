@@ -236,16 +236,18 @@ def train_and_eval(**params) -> float:
     model.print_trainable_parameters()
     print("Wrapped model:", model)
 
+    grad_accum_steps = 2
+
     # Trainer setup
     training_args = TrainingArguments(
         output_dir="./out",
         logging_dir="./logs",
-        per_device_train_batch_size=params["batch_size"],
+        per_device_train_batch_size=params["batch_size"] // grad_accum_steps,
         per_device_eval_batch_size=params["batch_size"],
         learning_rate=params["learning_rate"],
         num_train_epochs=params["num_epochs"],
         save_strategy="no",
-        report_to="wandb",
+        # report_to="wandb",
         logging_steps=100,
         run_name=params["experiment"],
         fp16=device.type == "cuda", # use fp16 only on CUDA
@@ -255,6 +257,7 @@ def train_and_eval(**params) -> float:
         max_grad_norm=1.0,
         weight_decay=0.01,
         metric_for_best_model="accuracy" if params["task"] not in ["stsb", "cola"] else "matthews_correlation" if params["task"] == "cola" else "pearson",
+        gradient_accumulation_steps=grad_accum_steps,
     )
 
     def safe_corr(x, y, corr_fn):
@@ -308,7 +311,9 @@ def train_and_eval(**params) -> float:
 
         return metrics
     
-    wandb.init(project=params["project"], name=params["experiment"], config=params)
+    # wandb.init(project=params["project"], name=params["experiment"], config=params)
+    # wandb offline
+    wandb.init(project=params["project"], name=params["experiment"], config=params, mode="offline")
 
     # log gradients to wandb
     wandb.watch(model, log="gradients", log_freq=1000)
@@ -331,8 +336,10 @@ def train_and_eval(**params) -> float:
         metrics = trainer.evaluate()
         main_score = pick_main_score(metrics)
         wandb.finish()
+        gen_gap = trainer.state.log_history[-1]["eval_loss"] - trainer.state.log_history[-2]["train_loss"]
         avg_sparsity = float(torch.tensor(global_sparsity).mean()) if global_sparsity else 0.0
-        return float(main_score) if main_score is not None else -999.0, float(avg_sparsity)
+        print(f"[train_and_eval] Completed for params={params}: main_score={main_score}, avg_sparsity={avg_sparsity}")
+        return float(main_score) if main_score is not None else -999.0, float(avg_sparsity), float(gen_gap)
     except Exception as e:
         print(f"[train_and_eval] failed for params={params}: {e}")
         import traceback
@@ -345,7 +352,7 @@ if __name__ == "__main__":
     from best_params import BEST_PARAMS
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("--task", type=str, default="rte", help="GLUE task name")
+    parser.add_argument("--task", type=str, default="cola", help="GLUE task name")
     parser.add_argument("--lora", action="store_true", help="Use LoRA instead of SpikeLoRA")
     parser.add_argument("--adalora", action="store_true", help="Use AdaLoRA instead of SpikeLoRA")
     parser.add_argument("--spike", action="store_true", help="Use a SpikeLORA variant")
@@ -371,16 +378,18 @@ if __name__ == "__main__":
     seeds = [args.seed] if args.seed is not None else [1,2,3,4,5]
     sparsities = []
     scores = []
+    gen_gaps = []
     for seed in seeds:
         params["seed"] = seed
         params["experiment"] = f"{args.task}-r{args.rank}-v{args.v_threshold}{'--lora' if args.lora else ''}{'--adalora' if args.adalora else ''}-s{seed}"
         print(f"Running with params: {params}")
-        score, sparsity = train_and_eval(**params)
+        score, sparsity, gen_gap = train_and_eval(**params)
         scores.append(score)
         sparsities.append(sparsity)
-        print(f"Score for seed {seed}: {score} (sparsity: {sparsities})")
+        gen_gaps.append(gen_gap)
+        print(f"Score for seed {seed}: {score} (sparsity: {sparsity:.4f}, gen_gap: {gen_gap:.4f})")
     
     # Final results
     score = np.mean(scores)
     stdev = np.std(scores)
-    print(f"Final score for {args.experiment} experiment: {score} ± {stdev} (n={len(seeds)}) with average sparsity {np.mean(sparsities)}")
+    print(f"Final score for {args.experiment} experiment: {score} ± {stdev} (n={len(seeds)}) with average sparsity {np.mean(sparsities):.4f} and gen_gap {np.mean(gen_gaps):.4f}")

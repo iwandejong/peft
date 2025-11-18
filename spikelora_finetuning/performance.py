@@ -167,6 +167,8 @@ def train_and_eval(**params) -> float:
   
     model = get_peft_model(model, config)
 
+    print(model)
+
     # Trainer setup
     training_args = TrainingArguments(
         per_device_train_batch_size=params["batch_size"],
@@ -186,6 +188,7 @@ def train_and_eval(**params) -> float:
         max_grad_norm=1.0,
         weight_decay=0.01,
         metric_for_best_model="accuracy" if params["task"] not in ["stsb", "cola"] else "matthews_correlation" if params["task"] == "cola" else "pearson",
+        gradient_accumulation_steps=params["gradient_accumulation_steps"],
     )
 
     def safe_corr(x, y, corr_fn):
@@ -266,6 +269,9 @@ if __name__ == "__main__":
     params["learning_rate"] = args.lr if args.lr is not None else BEST_PARAMS[params["task"]]["learning_rate"]
     params["batch_size"] = BEST_PARAMS[params["task"]]["batch_size"]
     params["num_epochs"] = BEST_PARAMS[params["task"]]["num_epochs"]
+    params["gradient_accumulation_steps"] = 2
+    params["batch_size"] = max(1, params["batch_size"] // params["gradient_accumulation_steps"])
+    params["effective_batch_size"] = params["batch_size"] * params["gradient_accumulation_steps"]
 
     # Setup seeds
     seeds = [args.seed] if args.seed is not None else [1,2,3,4,5]

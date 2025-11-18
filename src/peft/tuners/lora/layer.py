@@ -115,6 +115,9 @@ class LoraLayer(BaseTunerLayer):
         self.spikelora_lif = torch.nn.ModuleDict()
         self.spikelora_v_threshold: dict[str, float] = {}
         self.sparsity = {}
+        # Sigmoid learnt weight matrix
+        self.sigmoid_low_rank = nn.ModuleDict({})
+        self.activation = nn.Sigmoid()
         
         self.kwargs = kwargs
 

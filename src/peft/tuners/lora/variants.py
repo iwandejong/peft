@@ -329,6 +329,10 @@ class SpikeLoraLinearVariant(LoraVariant):
 
             # logging sparsity
             module.sparsity = {}
+
+        if not hasattr(module, 'sigmoid_low_rank'):
+            module.adapter_layer_names = module.adapter_layer_names[:] + ("sigmoid_low_rank",)
+            module.sigmoid_low_rank = nn.ModuleDict({})
         
         # Create LIF node directly
         from spikingjelly.clock_driven import neuron, surrogate
@@ -341,43 +345,46 @@ class SpikeLoraLinearVariant(LoraVariant):
             detach_reset=True
         )
 
+        module.sigmoid_low_rank[adapter_name] = nn.Linear(
+            module.lora_A[adapter_name].out_features,
+            module.lora_A[adapter_name].out_features,
+            bias=True
+        )
+
     @staticmethod
     def forward(module: Linear, active_adapter: str, x: torch.Tensor, result: torch.Tensor) -> torch.Tensor:
         lora_A = module.lora_A[active_adapter]
         lora_B = module.lora_B[active_adapter]
         dropout = module.lora_dropout[active_adapter]
         scaling = module.scaling[active_adapter]
-        lif = module.spikelora_lif[active_adapter]
+        # lif = module.spikelora_lif[active_adapter]
+        sigmoid = module.sigmoid_low_rank[active_adapter]
 
         if isinstance(dropout, nn.Identity) or not module.training:
             x = x
         else:
             x = dropout(x)
 
-        # torch.randn(batch_size, seq_len, d_in, device=device)
-        bs, sl, _ = x.shape
-        dout = lora_B.out_features
-
         # Apply LoRA with spiking directly
         lora_out = lora_A(x)
-        lora_out = dropout(lora_out)
         
         # Reset LIF for each forward pass (pointwise spiking)
-        lif.reset()
-        spikes = lif(lora_out)
+        # lif.reset()
+        # spikes = lif(lora_out)
         # lora_out = lora_out * spikes  # gated by spikes
         # lora_out = lora_B(lora_out) * scaling
+        # module.sparsity[active_adapter] = (spikes == 0).float().mean().item()
 
-        lora_out = lora_out * spikes
-        module.sparsity[active_adapter] = (spikes == 0).float().mean().item()
-        lora_out = lora_out.reshape(bs * sl, module.r[active_adapter]).to_sparse()
+        # Apply learnt sigmoid gating
+        lora_out_s = sigmoid(lora_out)
+        lora_out_s = module.activation(lora_out)
+        module.sparsity[active_adapter] = (lora_out_s < 0.1).float().mean().item()
 
-        with autocast('cuda', enabled=False, dtype=torch.float32):
-            up_proj = torch.sparse.mm(lora_out, lora_B.weight.T)
-        up_proj = up_proj.reshape(bs, sl, dout)
-        up_proj = up_proj.to(x.dtype)
+        # apply residual connection (experiment)
+        # lora_out = lora_out + lora_out_s
+        lora_out = lora_out * lora_out_s # scale back up
 
-        lora_out = up_proj * scaling
+        lora_out = lora_B(lora_out) * scaling
         
         return result + lora_out
 
