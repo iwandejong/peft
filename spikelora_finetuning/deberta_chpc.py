@@ -294,8 +294,8 @@ def train_and_eval(**params) -> float:
     # # wandb offline
     # wandb.init(project=params["project"], name=params["experiment"], config=params, mode="offline")
 
-    # log gradients to wandb
-    wandb.watch(model, log="gradients", log_freq=1000)
+    # # log gradients to wandb
+    # wandb.watch(model, log="gradients", log_freq=100)
 
     trainer = Trainer(
         model=model,
