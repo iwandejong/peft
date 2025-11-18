@@ -37,12 +37,7 @@ class SparsityLoggerCallback(TrainerCallback):
                 for adapter, v in mod.sparsity.items():
                     val = v.mean().item() if isinstance(v, torch.Tensor) else v
                     sparsity_list.append(val)
-                    sparsity_dict[f"sparsity/{name}"] = val
-            if hasattr(mod, "spikelora_lif"):
-                for adapter, lif in mod.spikelora_lif.items():
-                    if hasattr(lif, "v_threshold"):
-                        val = lif.v_threshold.item() if isinstance(lif.v_threshold, torch.Tensor) else lif.v_threshold
-                        sparsity_dict[f"sparsity/{name}/v_threshold"] = val
+                    sparsity_dict[f"train_sparsity/{name}"] = val
 
         global_sparsity = float(torch.tensor(sparsity_list).mean()) if sparsity_list else 0.0
         global_v_thresholds = [v for k, v in sparsity_dict.items() if k.endswith("v_threshold")]
@@ -301,7 +296,7 @@ def train_and_eval(**params) -> float:
                 for adapter, v in mod.sparsity.items():
                     val = v.mean().item() if isinstance(v, torch.Tensor) else v
                     sparsity_list.append(val)
-                    sparsity_dict[f"{name}/sparsity"] = val
+                    sparsity_dict[f"eval_sparsity/{name}"] = val
 
         # global aggregated metrics
         metrics["eval/global_sparsity"] = float(torch.tensor(sparsity_list).mean()) if sparsity_list else 0.0
