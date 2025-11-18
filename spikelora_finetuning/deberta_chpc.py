@@ -304,8 +304,8 @@ def train_and_eval(**params) -> float:
                     sparsity_dict[f"{name}/sparsity"] = val
 
         # global aggregated metrics
-        metrics["sparsity"] = float(torch.tensor(sparsity_list).mean()) if sparsity_list else 0.0
-        global_sparsity.append(metrics["sparsity"])
+        metrics["eval/global_sparsity"] = float(torch.tensor(sparsity_list).mean()) if sparsity_list else 0.0
+        global_sparsity.append(metrics["eval/global_sparsity"])
 
         # per-adapter metrics
         metrics.update(sparsity_dict)
@@ -317,7 +317,7 @@ def train_and_eval(**params) -> float:
     # wandb.init(project=params["project"], name=params["experiment"], config=params, mode="offline")
 
     # log gradients to wandb
-    wandb.watch(model, log="gradients", log_freq=1000)
+    wandb.watch(model, log="gradients", log_freq=100)
 
     trainer = Trainer(
         model=model,
