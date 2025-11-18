@@ -27,32 +27,6 @@ print(f"Using device: {device}")
 
 import wandb
 
-class SparsityLoggerCallback(TrainerCallback):
-    def on_step_end(self, args, state, control, **kwargs):
-        model = kwargs["model"]
-        sparsity_list = []
-        sparsity_dict = {}
-        for name, mod in model.named_modules():
-            if hasattr(mod, "sparsity"):
-                for adapter, v in mod.sparsity.items():
-                    val = v.mean().item() if isinstance(v, torch.Tensor) else v
-                    sparsity_list.append(val)
-                    sparsity_dict[f"train_sparsity/{name}"] = val
-
-        global_sparsity = float(torch.tensor(sparsity_list).mean()) if sparsity_list else 0.0
-        global_v_thresholds = [v for k, v in sparsity_dict.items() if k.endswith("v_threshold")]
-        wandb.log({"train/global_sparsity": global_sparsity, **sparsity_dict, "step": state.global_step})
-        wandb.log({"train/global_v_threshold": float(torch.tensor(global_v_thresholds).mean()) if global_v_thresholds else 0.0, "step": state.global_step})
-
-    def on_evaluate(self, args, state, control, **kwargs):
-        model = kwargs["model"]
-        sparsity_list = []
-        for name, mod in model.named_modules():
-            if hasattr(mod, "sparsity"):
-                for adapter, v in mod.sparsity.items():
-                    sparsity_list.append(v.mean().item())
-        wandb.log({"eval/global_sparsity": np.mean(sparsity_list)}, step=state.global_step)
-
 def get_metric_fn(task):
     if task in ["cola"]:  # Matthew's correlation
         from sklearn.metrics import matthews_corrcoef
@@ -296,23 +270,23 @@ def train_and_eval(**params) -> float:
             preds = np.argmax(logits, axis=-1)
             metrics = metric_fn(preds, labels)
 
-        # # --- custom metrics ---
-        # sparsity_list = []
-        # sparsity_dict = {}
+        # --- custom metrics ---
+        sparsity_list = []
+        sparsity_dict = {}
 
-        # for name, mod in trainer.model.named_modules():
-        #     if hasattr(mod, "sparsity"):
-        #         for adapter, v in mod.sparsity.items():
-        #             val = v.mean().item() if isinstance(v, torch.Tensor) else v
-        #             sparsity_list.append(val)
-        #             sparsity_dict[f"eval_sparsity/{name}"] = val
+        for name, mod in trainer.model.named_modules():
+            if hasattr(mod, "sparsity"):
+                for adapter, v in mod.sparsity.items():
+                    val = v.mean().item() if isinstance(v, torch.Tensor) else v
+                    sparsity_list.append(val)
+                    sparsity_dict[f"{name}/sparsity"] = val
 
-        # # global aggregated metrics
-        # metrics["eval/global_sparsity"] = float(torch.tensor(sparsity_list).mean()) if sparsity_list else 0.0
-        # global_sparsity.append(metrics["eval/global_sparsity"])
+        # global aggregated metrics
+        metrics["sparsity"] = float(torch.tensor(sparsity_list).mean()) if sparsity_list else 0.0
+        global_sparsity.append(metrics["sparsity"])
 
-        # # per-adapter metrics
-        # metrics.update(sparsity_dict)
+        # per-adapter metrics
+        metrics.update(sparsity_dict)
 
         return metrics
     
@@ -321,7 +295,7 @@ def train_and_eval(**params) -> float:
     # wandb.init(project=params["project"], name=params["experiment"], config=params, mode="offline")
 
     # log gradients to wandb
-    wandb.watch(model, log="gradients", log_freq=100)
+    wandb.watch(model, log="gradients", log_freq=1000)
 
     trainer = Trainer(
         model=model,
@@ -329,8 +303,7 @@ def train_and_eval(**params) -> float:
         train_dataset=train_enc,
         eval_dataset=val_enc,
         processing_class=tokenizer,
-        compute_metrics=compute_metrics,
-        callbacks=[SparsityLoggerCallback()]
+        compute_metrics=compute_metrics
     )
 
     print(next(model.parameters()).device)
