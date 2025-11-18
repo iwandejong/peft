@@ -44,6 +44,15 @@ class SparsityLoggerCallback(TrainerCallback):
         wandb.log({"train/global_sparsity": global_sparsity, **sparsity_dict, "step": state.global_step})
         wandb.log({"train/global_v_threshold": float(torch.tensor(global_v_thresholds).mean()) if global_v_thresholds else 0.0, "step": state.global_step})
 
+    def on_evaluate(self, args, state, control, **kwargs):
+        model = kwargs["model"]
+        sparsity_list = []
+        for name, mod in model.named_modules():
+            if hasattr(mod, "sparsity"):
+                for adapter, v in mod.sparsity.items():
+                    sparsity_list.append(v.mean().item())
+        wandb.log({"eval/global_sparsity": np.mean(sparsity_list)}, step=state.global_step)
+
 def get_metric_fn(task):
     if task in ["cola"]:  # Matthew's correlation
         from sklearn.metrics import matthews_corrcoef
@@ -287,23 +296,23 @@ def train_and_eval(**params) -> float:
             preds = np.argmax(logits, axis=-1)
             metrics = metric_fn(preds, labels)
 
-        # --- custom metrics ---
-        sparsity_list = []
-        sparsity_dict = {}
+        # # --- custom metrics ---
+        # sparsity_list = []
+        # sparsity_dict = {}
 
-        for name, mod in trainer.model.named_modules():
-            if hasattr(mod, "sparsity"):
-                for adapter, v in mod.sparsity.items():
-                    val = v.mean().item() if isinstance(v, torch.Tensor) else v
-                    sparsity_list.append(val)
-                    sparsity_dict[f"eval_sparsity/{name}"] = val
+        # for name, mod in trainer.model.named_modules():
+        #     if hasattr(mod, "sparsity"):
+        #         for adapter, v in mod.sparsity.items():
+        #             val = v.mean().item() if isinstance(v, torch.Tensor) else v
+        #             sparsity_list.append(val)
+        #             sparsity_dict[f"eval_sparsity/{name}"] = val
 
-        # global aggregated metrics
-        metrics["eval/global_sparsity"] = float(torch.tensor(sparsity_list).mean()) if sparsity_list else 0.0
-        global_sparsity.append(metrics["eval/global_sparsity"])
+        # # global aggregated metrics
+        # metrics["eval/global_sparsity"] = float(torch.tensor(sparsity_list).mean()) if sparsity_list else 0.0
+        # global_sparsity.append(metrics["eval/global_sparsity"])
 
-        # per-adapter metrics
-        metrics.update(sparsity_dict)
+        # # per-adapter metrics
+        # metrics.update(sparsity_dict)
 
         return metrics
     
