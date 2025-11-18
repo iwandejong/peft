@@ -18,12 +18,15 @@ echo Available GPU devices: $CUDA_VISIBLE_DEVICES
 echo
 
 module purge
-module load chpc/python/anaconda/3-2021.11
+# module load chpc/python/anaconda/3-2021.11
+module load chpc/python/anaconda/3-2024.10.1
 module load chpc/cuda/12.0/12.0
 
 # Activate venv
 source /mnt/lustre/users/idejong/peft/venv/bin/activate
 
+# Print Torch version
+python3 -c "import torch; print(torch.__version__)"
 # Check CUDA version and availability
 python3 -c "import torch; print(torch.version.cuda, torch.cuda.is_available())"
 
