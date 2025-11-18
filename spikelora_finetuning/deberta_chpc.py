@@ -236,7 +236,7 @@ def train_and_eval(**params) -> float:
     model.print_trainable_parameters()
     print("Wrapped model:", model)
 
-    grad_accum_steps = 2
+    grad_accum_steps = 1
 
     # Trainer setup
     training_args = TrainingArguments(
@@ -247,7 +247,7 @@ def train_and_eval(**params) -> float:
         learning_rate=params["learning_rate"],
         num_train_epochs=params["num_epochs"],
         save_strategy="no",
-        # report_to="wandb",
+        report_to="wandb",
         logging_steps=100,
         run_name=params["experiment"],
         fp16=device.type == "cuda", # use fp16 only on CUDA
@@ -311,9 +311,9 @@ def train_and_eval(**params) -> float:
 
         return metrics
     
-    # wandb.init(project=params["project"], name=params["experiment"], config=params)
-    # wandb offline
-    wandb.init(project=params["project"], name=params["experiment"], config=params, mode="offline")
+    wandb.init(project=params["project"], name=params["experiment"], config=params)
+    # # wandb offline
+    # wandb.init(project=params["project"], name=params["experiment"], config=params, mode="offline")
 
     # log gradients to wandb
     wandb.watch(model, log="gradients", log_freq=1000)
