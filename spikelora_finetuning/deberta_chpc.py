@@ -236,13 +236,14 @@ def train_and_eval(**params) -> float:
     model.print_trainable_parameters()
     print("Wrapped model:", model)
 
-    grad_accum_steps = 1
+    # grad_accum_steps = 1
 
     # Trainer setup
     training_args = TrainingArguments(
         output_dir="./out",
         logging_dir="./logs",
-        per_device_train_batch_size=params["batch_size"] // grad_accum_steps,
+        # per_device_train_batch_size=params["batch_size"] // grad_accum_steps,
+        per_device_train_batch_size=params["batch_size"],
         per_device_eval_batch_size=params["batch_size"],
         learning_rate=params["learning_rate"],
         num_train_epochs=params["num_epochs"],
@@ -257,7 +258,7 @@ def train_and_eval(**params) -> float:
         max_grad_norm=1.0,
         weight_decay=0.01,
         metric_for_best_model="accuracy" if params["task"] not in ["stsb", "cola"] else "matthews_correlation" if params["task"] == "cola" else "pearson",
-        gradient_accumulation_steps=grad_accum_steps,
+        # gradient_accumulation_steps=grad_accum_steps,
     )
 
     def safe_corr(x, y, corr_fn):
