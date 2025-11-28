@@ -24,6 +24,11 @@ else:
 
 print(f"Using device: {device}")
 
+# clear cache
+if device.type == "cuda":
+    torch.cuda.empty_cache()
+    
+
 import wandb
 
 def get_metric_fn(task):
