@@ -177,6 +177,7 @@ def train_and_eval(**params) -> float:
       use_spikelora=True,
       use_rslora=True,
       spikelora_v_threshold=params["v_threshold"],
+      init_lora_weights='loftq'
     )
     print("LoRA config:", lora_config)
   
