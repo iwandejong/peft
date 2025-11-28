@@ -118,6 +118,8 @@ def train_and_eval(**params) -> float:
     val_split = get_validation_split(dataset)
     train_ds = dataset["train"]
     val_ds = dataset[val_split]
+    # select small subset for quick testing
+    train_ds = train_ds.select(range(100))
 
     def preprocess(example):
         key1, key2 = TASK_TO_KEYS[params["task"]]
