@@ -1,12 +1,11 @@
 import time
-from datasets import load_from_disk, load_dataset
+from datasets import load_dataset
 from transformers import (
     AutoModelForSequenceClassification,
+    AutoTokenizer,
     TrainingArguments,
     Trainer,
     set_seed,
-    DebertaV2Tokenizer,
-    TrainerCallback
 )
 from peft import get_peft_model, LoraConfig
 import numpy as np
@@ -105,7 +104,7 @@ def train_and_eval(**params) -> float:
 
     # Model + Tokenizer
     # tokenizer = DebertaV2Tokenizer.from_pretrained(f"{PATH}/deberta_v3")
-    tokenizer = DebertaV2Tokenizer.from_pretrained(MODEL_NAME)
+    tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME, use_fast=True)
 
     val_split = get_validation_split(dataset)
     train_ds = dataset["train"]
