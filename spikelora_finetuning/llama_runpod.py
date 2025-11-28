@@ -163,7 +163,6 @@ def train_and_eval(**params) -> float:
         ignore_mismatched_sizes=True,
         quantization_config=bnb_config if params["quantize"] else None,
         device_map="auto",
-        attn_implementation="flash_attention_2"
     )
 
     model.config.use_cache = False  # disable cache for quantization
