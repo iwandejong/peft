@@ -141,16 +141,6 @@ def train_and_eval(**params) -> float:
     # Load model (let Trainer handle device placement / fp16)
     num_labels = 1 if params["task"] == "stsb" else dataset["train"].features["label"].num_classes
 
-    model = AutoModelForSequenceClassification.from_pretrained(
-        # PATH + "/deberta_v3",
-        MODEL_NAME,
-        num_labels=num_labels,
-        problem_type="regression" if params["task"] == "stsb" else None,
-        trust_remote_code=True,
-        ignore_mismatched_sizes=True,
-        device_map="auto",
-    ).to(device)
-
     # prepare for quantization
     import torch
     from transformers import BitsAndBytesConfig
@@ -161,6 +151,17 @@ def train_and_eval(**params) -> float:
         bnb_4bit_use_double_quant=True,
         bnb_4bit_compute_dtype=torch.bfloat16,
     )
+
+    model = AutoModelForSequenceClassification.from_pretrained(
+        # PATH + "/deberta_v3",
+        MODEL_NAME,
+        num_labels=num_labels,
+        problem_type="regression" if params["task"] == "stsb" else None,
+        trust_remote_code=True,
+        ignore_mismatched_sizes=True,
+        quantization_config=config,
+        device_map="auto",
+    ).to(device)
 
     from peft import prepare_model_for_kbit_training
 
