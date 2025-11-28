@@ -178,9 +178,7 @@ def train_and_eval(**params) -> float:
       lora_dropout=params["dropout"],
       target_modules=["q_proj", "v_proj"],
       task_type="SEQ_CLS",
-      use_spikelora=True,
       use_rslora=True,
-      spikelora_v_threshold=params["v_threshold"]
     )
     print("LoRA config:", lora_config)
   
