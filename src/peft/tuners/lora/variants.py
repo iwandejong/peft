@@ -325,7 +325,17 @@ class SpikeLoraLinearVariant(LoraVariant):
         # Add LIF node directly to the module instead of creating a wrapper layer
         if not hasattr(module, 'spikelora_lif'):
             module.adapter_layer_names = module.adapter_layer_names[:] + ("spikelora_lif",)
-            module.spikelora_lif = nn.ModuleDict({})
+            # module.spikelora_lif = nn.ModuleDict({})
+            
+            from spikingjelly.clock_driven import neuron, surrogate
+            v_threshold = kwargs.get("spikelora_v_threshold", 1.0)
+            
+            module.spikelora_lif = neuron.LIFNode(
+                tau=2.0, 
+                surrogate_function=surrogate.ATan(alpha=2.0), 
+                v_threshold=v_threshold,
+                detach_reset=True
+            )
 
             # logging sparsity
             module.sparsity = {}
