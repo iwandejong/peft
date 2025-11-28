@@ -175,7 +175,8 @@ def train_and_eval(**params) -> float:
         r=params["rank"],
         lora_alpha=params["rank"],
         lora_dropout=params["dropout"],
-        target_modules="all-linear",
+        # target_modules="all-linear",
+        target_modules=["q_proj", "v_proj"],
         task_type="SEQ_CLS",
         use_rslora=True
       )
