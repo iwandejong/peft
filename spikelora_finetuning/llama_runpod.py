@@ -227,7 +227,7 @@ def train_and_eval(**params) -> float:
         r=params["rank"],
         lora_alpha=params["rank"],
         lora_dropout=params["dropout"],
-        target_modules="all-linear",
+        target_modules=["q_proj", "v_proj"],
         task_type="SEQ_CLS",
         use_spikelora=True,
         use_rslora=True,
@@ -343,6 +343,10 @@ def train_and_eval(**params) -> float:
         gen_gap = trainer.state.log_history[-1]["eval_loss"] - trainer.state.log_history[-2]["train_loss"]
         avg_sparsity = float(torch.tensor(global_sparsity).mean()) if global_sparsity else 0.0
         print(f"[train_and_eval] Completed for params={params}: main_score={main_score}, avg_sparsity={avg_sparsity}")
+
+        # save model
+        model.save_pretrained(f"./models/{params['experiment']}")
+
         return float(main_score) if main_score is not None else -999.0, float(avg_sparsity), float(gen_gap)
     except Exception as e:
         print(f"[train_and_eval] failed for params={params}: {e}")
