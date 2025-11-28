@@ -214,6 +214,7 @@ def train_and_eval(**params) -> float:
         metric_for_best_model="accuracy" if params["task"] not in ["stsb", "cola"] else "matthews_correlation" if params["task"] == "cola" else "pearson",
         # gradient_accumulation_steps=grad_accum_steps,
         optim="paged_adamw_8bit",
+        eval_strategy="epoch",
     )
 
     def safe_corr(x, y, corr_fn):
