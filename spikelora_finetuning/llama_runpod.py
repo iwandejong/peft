@@ -168,73 +168,18 @@ def train_and_eval(**params) -> float:
     model = prepare_model_for_kbit_training(model)
 
     # Apply SpikeLoRA
-    config = None
-    if params["lora"]:
-      print("Using standard LoRA")
-      config =  LoraConfig( 
-        r=params["rank"],
-        lora_alpha=params["rank"],
-        lora_dropout=params["dropout"],
-        # target_modules="all-linear",
-        target_modules=["q_proj", "v_proj"],
-        task_type="SEQ_CLS",
-        use_rslora=True
-      )
-    elif params["adalora"]:
-      print("Using AdaLoRA")
-      from peft import AdaLoraConfig
-      if params["spike"]:
-        print("with SpikeLoRA")
-        config = AdaLoraConfig(
-          lora_alpha=params["rank"],
-          target_r=params["rank"],
-          init_r=min(2, params["rank"]),
-          tinit=0,
-          tfinal=0,
-          deltaT=1,
-          beta1=0.85,
-          beta2=0.85,
-          orth_reg_weight=0.5,
-          total_step=params["num_epochs"] * (len(train_enc) // params["batch_size"]),
-          rank_pattern=None,
-          target_modules="all-linear",
-          task_type="SEQ_CLS",
-          use_spikelora=True,
-          spikelora_v_threshold=params["v_threshold"],
-          use_rslora=True,
-        )
-      else:
-        print("without SpikeLoRA")
-        config = AdaLoraConfig(
-          lora_alpha=params["rank"],
-          target_r=params["rank"],
-          init_r=min(2, params["rank"]),
-          tinit=0,
-          tfinal=0,
-          deltaT=1,
-          beta1=0.85,
-          beta2=0.85,
-          orth_reg_weight=0.5,
-          total_step=params["num_epochs"] * (len(train_enc) // params["batch_size"]),
-          rank_pattern=None,
-          target_modules="all-linear",
-          task_type="SEQ_CLS",
-          use_rslora=True,
-        )
-    else:
-      print("Using SpikeLoRA")
-      config = LoraConfig(
-        r=params["rank"],
-        lora_alpha=params["rank"],
-        lora_dropout=params["dropout"],
-        target_modules=["q_proj", "v_proj"],
-        task_type="SEQ_CLS",
-        use_spikelora=True,
-        use_rslora=True,
-        spikelora_v_threshold=params["v_threshold"],
-      )
+    lora_config = LoraConfig(
+      r=params["rank"],
+      lora_alpha=params["rank"],
+      lora_dropout=params["dropout"],
+      target_modules=["q_proj", "v_proj"],
+      task_type="SEQ_CLS",
+      use_spikelora=True,
+      use_rslora=True,
+      spikelora_v_threshold=params["v_threshold"],
+    )
   
-    model = get_peft_model(model, config)
+    model = get_peft_model(model, lora_config)
 
     # print model type and number of trainable params
     model.print_trainable_parameters()
