@@ -52,7 +52,8 @@ def get_metric_fn(task):
 
 # MODEL_NAME = "./deberta_v3"
 # MODEL_NAME = "microsoft/deberta-v3-base"
-MODEL_NAME = "meta-llama/Llama-2-7b-hf"
+# MODEL_NAME = "meta-llama/Llama-2-7b-hf"
+MODEL_NAME = "google/gemma-3-1b-it"
 # PATH = "/mnt/lustre/users/idejong/peft"
 
 # helper: pick validation split (handles mnli etc.)
