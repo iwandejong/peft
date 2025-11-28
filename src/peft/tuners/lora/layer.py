@@ -112,15 +112,7 @@ class LoraLayer(BaseTunerLayer):
         self.lora_variant: dict[str, LoraVariant] = {}
         # For SpikeLoRA 
         self.use_spikelora: dict[str, bool] = {}
-        # self.spikelora_lif = torch.nn.ModuleDict()
-
-        from spikingjelly.clock_driven import neuron, surrogate
-        self.spikelora_lif = neuron.LIFNode(
-                tau=2.0, 
-                surrogate_function=surrogate.ATan(alpha=2.0), 
-                v_threshold=0.1,
-                detach_reset=True
-            )
+        self.spikelora_lif = torch.nn.ModuleDict()
         self.spikelora_v_threshold: dict[str, float] = {}
         self.sparsity = {}
         # Sigmoid learnt weight matrix
