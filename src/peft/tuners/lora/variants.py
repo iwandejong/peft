@@ -326,30 +326,48 @@ class SpikeLoraLinearVariant(LoraVariant):
         if not hasattr(module, 'spikelora_lif'):
             module.adapter_layer_names = module.adapter_layer_names[:] + ("spikelora_lif",)
             module.spikelora_lif = nn.ModuleDict({})
-
-            # logging sparsity
             module.sparsity = {}
-
-        if not hasattr(module, 'sigmoid_low_rank'):
-            module.adapter_layer_names = module.adapter_layer_names[:] + ("sigmoid_low_rank",)
-            module.sigmoid_low_rank = nn.ModuleDict({})
-        
-        # Create LIF node directly
-        from spikingjelly.clock_driven import neuron, surrogate
+        # track per-adapter thresholds so we can recreate after quantization
+        if not hasattr(module, 'spikelora_v_thresholds'):
+            module.other_param_names = module.other_param_names + ("spikelora_v_thresholds",)
+            module.spikelora_v_thresholds = {}
         v_threshold = kwargs.get("spikelora_v_threshold", 1.0)
-        
+        module.spikelora_v_thresholds[adapter_name] = v_threshold
+
+        from spikingjelly.clock_driven import neuron, surrogate
         module.spikelora_lif[adapter_name] = neuron.LIFNode(
-            tau=2.0, 
-            surrogate_function=surrogate.ATan(alpha=2.0), 
+            tau=2.0,
+            surrogate_function=surrogate.ATan(alpha=2.0),
             v_threshold=v_threshold,
             detach_reset=True
         )
 
-        # module.sigmoid_low_rank[adapter_name] = nn.Linear(
-        #     module.lora_A[adapter_name].out_features,
-        #     module.lora_A[adapter_name].out_features,
-        #     bias=True
-        # )
+    @staticmethod
+    def _get_or_create_lif(module: nn.Module, adapter_name: str) -> nn.Module:
+        # Lazy recreation in case quantization replaced the module and dropped children
+        if not hasattr(module, 'spikelora_lif') or not isinstance(module.spikelora_lif, nn.ModuleDict):
+            module.spikelora_lif = nn.ModuleDict({})
+            if 'spikelora_lif' not in getattr(module, 'adapter_layer_names', ()):
+                module.adapter_layer_names = module.adapter_layer_names[:] + ("spikelora_lif",)
+        if not hasattr(module, 'sparsity'):
+            module.sparsity = {}
+        if adapter_name not in module.spikelora_lif:
+            from spikingjelly.clock_driven import neuron, surrogate
+            v_threshold = 1.0
+            if hasattr(module, 'spikelora_v_thresholds') and adapter_name in module.spikelora_v_thresholds:
+                v_threshold = module.spikelora_v_thresholds[adapter_name]
+            else:
+                # initialize dict if missing
+                if not hasattr(module, 'spikelora_v_thresholds'):
+                    module.spikelora_v_thresholds = {}
+                module.spikelora_v_thresholds[adapter_name] = v_threshold
+            module.spikelora_lif[adapter_name] = neuron.LIFNode(
+                tau=2.0,
+                surrogate_function=surrogate.ATan(alpha=2.0),
+                v_threshold=v_threshold,
+                detach_reset=True
+            )
+        return module.spikelora_lif[adapter_name]
 
     @staticmethod
     def forward(module: Linear, active_adapter: str, x: torch.Tensor, result: torch.Tensor) -> torch.Tensor:
@@ -357,148 +375,86 @@ class SpikeLoraLinearVariant(LoraVariant):
         lora_B = module.lora_B[active_adapter]
         dropout = module.lora_dropout[active_adapter]
         scaling = module.scaling[active_adapter]
-        lif = module.spikelora_lif[active_adapter]
-        # sigmoid = module.sigmoid_low_rank[active_adapter]
+        lif = SpikeLoraLinearVariant._get_or_create_lif(module, active_adapter)
 
-        if isinstance(dropout, nn.Identity) or not module.training:
-            x = x
-        else:
+        if not isinstance(dropout, nn.Identity) and module.training:
             x = dropout(x)
 
-        # Apply LoRA with spiking directly
         lora_out = lora_A(x)
-        
-        # Reset LIF for each forward pass (pointwise spiking)
         lif.reset()
         spikes = lif(lora_out)
-        lora_out = lora_out * spikes # gated by spikes
+        lora_out = lora_out * spikes
         lora_out = lora_B(lora_out) * scaling
         module.sparsity[active_adapter] = (spikes == 0).float().mean().item()
-
-        # # Apply learnt sigmoid gating
-        # lora_out_s = sigmoid(lora_out)
-        # lora_out_s = module.activation(lora_out)
-        # module.sparsity[active_adapter] = (lora_out_s < 0.1).float().mean().item()
-
-        # # apply residual connection (experiment)
-        # lora_out = lora_out + lora_out_s
-        # lora_out = lora_out * lora_out_s # scale back up
-
-        # lora_out = lora_B(lora_out) * scaling
-        
         return result + lora_out
 
 
 class SpikeLoraEmbeddingVariant(SpikeLoraLinearVariant):
     @staticmethod
-    def init(module: Embedding, adapter_name: str, **kwargs: Any) -> None:
-        # Add LIF node directly to the module instead of creating a wrapper layer
-        if not hasattr(module, 'spikelora_lif'):
-            module.adapter_layer_names = module.adapter_layer_names[:] + ("spikelora_lif",)
-            module.spikelora_lif = nn.ModuleDict({})
-
-            # logging sparsity
-            module.sparsity = {}
-        
-        # Create LIF node directly
-        from spikingjelly.clock_driven import neuron, surrogate
-        v_threshold = kwargs.get("spikelora_v_threshold", 1.0)
-        
-        module.spikelora_lif[adapter_name] = neuron.LIFNode(
-            tau=2.0, 
-            surrogate_function=surrogate.ATan(alpha=2.0), 
-            v_threshold=v_threshold, 
-            detach_reset=True
-        )
-
-    @staticmethod
     def forward(module: Embedding, active_adapter: str, x: torch.Tensor, result: torch.Tensor) -> torch.Tensor:
         lora_embedding_A = module.lora_embedding_A[active_adapter]
         lora_embedding_B = module.lora_embedding_B[active_adapter]
         scaling = module.scaling[active_adapter]
-        lif = module.spikelora_lif[active_adapter]
+        lif = SpikeLoraLinearVariant._get_or_create_lif(module, active_adapter)
 
-        # Apply LoRA with spiking directly for embeddings
         lora_out = lora_embedding_A(x)
-        
-        # Reset LIF for each forward pass (pointwise spiking)
         lif.reset()
         spikes = lif(lora_out)
-        lora_out = lora_out * spikes  # gated by spikes
+        lora_out = lora_out * spikes
         module.sparsity[active_adapter] = (spikes == 0).float().mean().item()
-        
         lora_out = lora_embedding_B(lora_out) * scaling
-        
         return result + lora_out
 
 
 class SpikeLoraConv1dVariant(SpikeLoraLinearVariant):
     @staticmethod
-    def init(module: Conv1d, adapter_name: str, **kwargs: Any) -> None:
-        # Add LIF node directly to the module instead of creating a wrapper layer
-        if not hasattr(module, 'spikelora_lif'):
-            module.adapter_layer_names = module.adapter_layer_names[:] + ("spikelora_lif",)
-            module.spikelora_lif = nn.ModuleDict({})
+    def forward(module: Conv1d, active_adapter: str, x: torch.Tensor, result: torch.Tensor) -> torch.Tensor:
+        lora_A = module.lora_A[active_adapter]
+        lora_B = module.lora_B[active_adapter]
+        scaling = module.scaling[active_adapter]
+        lif = SpikeLoraLinearVariant._get_or_create_lif(module, active_adapter)
 
-            # logging sparsity
-            module.sparsity = {}
-        
-        # Create LIF node directly
-        from spikingjelly.clock_driven import neuron, surrogate
-        v_threshold = kwargs.get("spikelora_v_threshold", 1.0)
-        
-        module.spikelora_lif[adapter_name] = neuron.LIFNode(
-            tau=2.0, 
-            surrogate_function=surrogate.ATan(alpha=2.0), 
-            v_threshold=v_threshold, 
-            detach_reset=True
-        )
+        lora_out = lora_A(x)
+        lif.reset()
+        spikes = lif(lora_out)
+        lora_out = lora_out * spikes
+        module.sparsity[active_adapter] = (spikes == 0).float().mean().item()
+        lora_out = lora_B(lora_out) * scaling
+        return result + lora_out
 
 
 class SpikeLoraConv2dVariant(SpikeLoraLinearVariant):
     @staticmethod
-    def init(module: Conv2d, adapter_name: str, **kwargs: Any) -> None:
-        # Add LIF node directly to the module instead of creating a wrapper layer
-        if not hasattr(module, 'spikelora_lif'):
-            module.adapter_layer_names = module.adapter_layer_names[:] + ("spikelora_lif",)
-            module.spikelora_lif = nn.ModuleDict({})
+    def forward(module: Conv2d, active_adapter: str, x: torch.Tensor, result: torch.Tensor) -> torch.Tensor:
+        lora_A = module.lora_A[active_adapter]
+        lora_B = module.lora_B[active_adapter]
+        scaling = module.scaling[active_adapter]
+        lif = SpikeLoraLinearVariant._get_or_create_lif(module, active_adapter)
 
-            # logging sparsity
-            module.sparsity = {}
-        
-        # Create LIF node directly
-        from spikingjelly.clock_driven import neuron, surrogate
-        v_threshold = kwargs.get("spikelora_v_threshold", 1.0)
-        
-        module.spikelora_lif[adapter_name] = neuron.LIFNode(
-            tau=2.0, 
-            surrogate_function=surrogate.ATan(alpha=2.0), 
-            v_threshold=v_threshold, 
-            detach_reset=True
-        )
+        lora_out = lora_A(x)
+        lif.reset()
+        spikes = lif(lora_out)
+        lora_out = lora_out * spikes
+        module.sparsity[active_adapter] = (spikes == 0).float().mean().item()
+        lora_out = lora_B(lora_out) * scaling
+        return result + lora_out
 
 
 class SpikeLoraConv3dVariant(SpikeLoraLinearVariant):
     @staticmethod
-    def init(module: Conv3d, adapter_name: str, **kwargs: Any) -> None:
-        # Add LIF node directly to the module instead of creating a wrapper layer
-        if not hasattr(module, 'spikelora_lif'):
-            module.adapter_layer_names = module.adapter_layer_names[:] + ("spikelora_lif",)
-            module.spikelora_lif = nn.ModuleDict({})
+    def forward(module: Conv3d, active_adapter: str, x: torch.Tensor, result: torch.Tensor) -> torch.Tensor:
+        lora_A = module.lora_A[active_adapter]
+        lora_B = module.lora_B[active_adapter]
+        scaling = module.scaling[active_adapter]
+        lif = SpikeLoraLinearVariant._get_or_create_lif(module, active_adapter)
 
-            # logging sparsity
-            module.sparsity = {}
-        
-        # Create LIF node directly
-        from spikingjelly.clock_driven import neuron, surrogate
-        v_threshold = kwargs.get("spikelora_v_threshold", 1.0)
-        
-        module.spikelora_lif[adapter_name] = neuron.LIFNode(
-            tau=2.0, 
-            surrogate_function=surrogate.ATan(alpha=2.0), 
-            v_threshold=v_threshold, 
-            detach_reset=True
-        )
+        lora_out = lora_A(x)
+        lif.reset()
+        spikes = lif(lora_out)
+        lora_out = lora_out * spikes
+        module.sparsity[active_adapter] = (spikes == 0).float().mean().item()
+        lora_out = lora_B(lora_out) * scaling
+        return result + lora_out
 
 
 class QALoraLinearVariant(LoraVariant):
