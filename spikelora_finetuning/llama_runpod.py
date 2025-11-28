@@ -178,6 +178,7 @@ def train_and_eval(**params) -> float:
       use_rslora=True,
       spikelora_v_threshold=params["v_threshold"],
     )
+    print("LoRA config:", lora_config)
   
     model = get_peft_model(model, lora_config)
 
