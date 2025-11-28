@@ -253,7 +253,7 @@ def train_and_eval(**params) -> float:
         num_train_epochs=params["num_epochs"],
         save_strategy="no",
         report_to="wandb",
-        logging_steps=100,
+        logging_steps=10,
         run_name=params["experiment"],
         fp16=device.type == "cuda", # use fp16 only on CUDA
         remove_unused_columns=False,
