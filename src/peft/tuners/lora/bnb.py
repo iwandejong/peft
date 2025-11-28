@@ -319,7 +319,7 @@ if is_bnb_4bit_available():
                 spikelora_v_threshold=spikelora_v_threshold,
             )
 
-        def resolve_lora_variant(self, *, use_dora: bool, **kwargs) -> Optional[LoraVariant]:
+        def resolve_lora_variant(self, *, use_dora: bool, use_spikelora: bool = True, **kwargs) -> Optional[LoraVariant]:
             if use_dora:
                 from .variants import DoraLinearVariant
                 return DoraLinearVariant()
