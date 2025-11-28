@@ -27,7 +27,7 @@ print(f"Using device: {device}")
 # clear cache
 if device.type == "cuda":
     torch.cuda.empty_cache()
-    
+
 
 import wandb
 
@@ -148,6 +148,7 @@ def train_and_eval(**params) -> float:
         problem_type="regression" if params["task"] == "stsb" else None,
         trust_remote_code=True,
         ignore_mismatched_sizes=True,
+        device_map="auto",
     ).to(device)
 
     # prepare for quantization
