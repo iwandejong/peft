@@ -118,9 +118,9 @@ def train_and_eval(**params) -> float:
     val_split = get_validation_split(dataset)
     train_ds = dataset["train"]
     val_ds = dataset[val_split]
-    # select small subset for quick testing
-    train_ds = train_ds.select(range(100))
-    val_ds = val_ds.select(range(100))
+    # # select small subset for quick testing
+    # train_ds = train_ds.select(range(100))
+    # val_ds = val_ds.select(range(100))
 
     def preprocess(example):
         key1, key2 = TASK_TO_KEYS[params["task"]]
@@ -301,9 +301,9 @@ def train_and_eval(**params) -> float:
         print(f"[train_and_eval] Completed for params={params}: main_score={main_score}, avg_sparsity={avg_sparsity}")
 
         # save model
-        model.save_pretrained(f"./models/{params['experiment']}")
+        model.save_pretrained(f"./models/{params['experiment']}-spikelora")
 
-        model.push_to_hub(f"iwandejong/{params['experiment']}", private=True)
+        model.push_to_hub(f"iwandejong/{params['experiment']}-spikelora", private=True)
 
         return float(main_score) if main_score is not None else -999.0, float(avg_sparsity), float(gen_gap)
     except Exception as e:
