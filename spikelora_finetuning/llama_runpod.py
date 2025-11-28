@@ -170,10 +170,6 @@ def train_and_eval(**params) -> float:
 
     model.config.use_cache = False  # disable cache for quantization
 
-    from peft import prepare_model_for_kbit_training
-
-    model = prepare_model_for_kbit_training(model)
-
     # Apply SpikeLoRA
     lora_config = LoraConfig(
       r=params["rank"],
@@ -188,6 +184,10 @@ def train_and_eval(**params) -> float:
     print("LoRA config:", lora_config)
   
     model = get_peft_model(model, lora_config)
+    
+    from peft import prepare_model_for_kbit_training
+    model = prepare_model_for_kbit_training(model)
+
 
     # print model type and number of trainable params
     model.print_trainable_parameters()
