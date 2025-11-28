@@ -191,6 +191,12 @@ class LoraLayer(BaseTunerLayer):
         convention, and not here.
 
         """
+        if use_dora:
+            from .variants import DoRAVariant
+            return DoRAVariant
+        if kwargs.get("use_spikelora", False):
+            from .variants import SpikeLoraVariant
+            return SpikeLoraVariant
         return None
 
     def update_layer(
