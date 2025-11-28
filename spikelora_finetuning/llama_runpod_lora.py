@@ -148,10 +148,11 @@ def train_and_eval(**params) -> float:
 
     bnb_config = BitsAndBytesConfig(
         load_in_4bit=True,
-        # bnb_4bit_quant_type="nf4",
-        bnb_4bit_quant_type="fp4",
+        bnb_4bit_compute_dtype=(
+            torch.bfloat16 if torch.cuda.is_available() and torch.cuda.is_bf16_supported() else torch.float16
+        ),
         bnb_4bit_use_double_quant=True,
-        bnb_4bit_compute_dtype=torch.bfloat16
+        bnb_4bit_quant_type="nf4",
     )
 
     model = AutoModelForSequenceClassification.from_pretrained(
@@ -169,7 +170,7 @@ def train_and_eval(**params) -> float:
 
     from peft import prepare_model_for_kbit_training
 
-    model = prepare_model_for_kbit_training(model)
+    model = prepare_model_for_kbit_training(model, use_gradient_checkpointing=True)
 
     # Apply SpikeLoRA
     lora_config = LoraConfig(
@@ -297,7 +298,10 @@ def train_and_eval(**params) -> float:
         # save model
         model.save_pretrained(f"./models/{params['experiment']}")
 
-        model.push_to_hub(f"iwandejong/{params['experiment']}", private=True)
+        full_model = model.merge_and_unload()
+
+        model.push_to_hub(f"iwandejong/{params['experiment']}-lora", private=True)
+        full_model.push_to_hub(f"iwandejong/{params['experiment']}-lora-merged", private=True)
 
         return float(main_score) if main_score is not None else -999.0, float(avg_sparsity), float(gen_gap)
     except Exception as e:
