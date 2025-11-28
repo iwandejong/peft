@@ -296,6 +296,8 @@ if is_bnb_4bit_available():
             init_lora_weights: bool = True,
             use_rslora: bool = False,
             use_dora: bool = False,
+            use_spikelora: bool = False,
+            spikelora_v_threshold: float = 1.0,
             lora_bias: bool = False,
             **kwargs,
         ) -> None:
@@ -313,15 +315,18 @@ if is_bnb_4bit_available():
                 use_rslora=use_rslora,
                 use_dora=use_dora,
                 lora_bias=lora_bias,
+                use_spikelora=use_spikelora,
+                spikelora_v_threshold=spikelora_v_threshold,
             )
 
         def resolve_lora_variant(self, *, use_dora: bool, **kwargs) -> Optional[LoraVariant]:
-            if not use_dora:
-                return None
-
-            from .variants import DoraLinearVariant
-
-            return DoraLinearVariant()
+            if use_dora:
+                from .variants import DoraLinearVariant
+                return DoraLinearVariant()
+            elif use_spikelora:
+                from .variants import SpikeLoraLinearVariant
+                return SpikeLoraLinearVariant()
+            return None
 
         def merge(self, safe_merge: bool = False, adapter_names: Optional[list[str]] = None) -> None:
             """

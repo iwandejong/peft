@@ -325,24 +325,10 @@ class SpikeLoraLinearVariant(LoraVariant):
         # Add LIF node directly to the module instead of creating a wrapper layer
         if not hasattr(module, 'spikelora_lif'):
             module.adapter_layer_names = module.adapter_layer_names[:] + ("spikelora_lif",)
-            # module.spikelora_lif = nn.ModuleDict({})
-            
-            from spikingjelly.clock_driven import neuron, surrogate
-            v_threshold = kwargs.get("spikelora_v_threshold", 1.0)
-            
-            module.spikelora_lif = neuron.LIFNode(
-                tau=2.0, 
-                surrogate_function=surrogate.ATan(alpha=2.0), 
-                v_threshold=v_threshold,
-                detach_reset=True
-            )
+            module.spikelora_lif = nn.ModuleDict({})
 
             # logging sparsity
             module.sparsity = {}
-
-        if not hasattr(module, 'sigmoid_low_rank'):
-            module.adapter_layer_names = module.adapter_layer_names[:] + ("sigmoid_low_rank",)
-            module.sigmoid_low_rank = nn.ModuleDict({})
         
         # Create LIF node directly
         from spikingjelly.clock_driven import neuron, surrogate
@@ -354,12 +340,6 @@ class SpikeLoraLinearVariant(LoraVariant):
             v_threshold=v_threshold,
             detach_reset=True
         )
-
-        # module.sigmoid_low_rank[adapter_name] = nn.Linear(
-        #     module.lora_A[adapter_name].out_features,
-        #     module.lora_A[adapter_name].out_features,
-        #     bias=True
-        # )
 
     @staticmethod
     def forward(module: Linear, active_adapter: str, x: torch.Tensor, result: torch.Tensor) -> torch.Tensor:
@@ -384,17 +364,6 @@ class SpikeLoraLinearVariant(LoraVariant):
         lora_out = lora_out * spikes # gated by spikes
         lora_out = lora_B(lora_out) * scaling
         module.sparsity[active_adapter] = (spikes == 0).float().mean().item()
-
-        # # Apply learnt sigmoid gating
-        # lora_out_s = sigmoid(lora_out)
-        # lora_out_s = module.activation(lora_out)
-        # module.sparsity[active_adapter] = (lora_out_s < 0.1).float().mean().item()
-
-        # # apply residual connection (experiment)
-        # lora_out = lora_out + lora_out_s
-        # lora_out = lora_out * lora_out_s # scale back up
-
-        # lora_out = lora_B(lora_out) * scaling
         
         return result + lora_out
 
