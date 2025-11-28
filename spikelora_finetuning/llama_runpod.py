@@ -163,6 +163,7 @@ def train_and_eval(**params) -> float:
         ignore_mismatched_sizes=True,
         quantization_config=bnb_config if params["quantize"] else None,
         device_map="auto",
+        attn_implementation="flash_attention_2"
     )
 
     model.config.use_cache = False  # disable cache for quantization
@@ -213,6 +214,7 @@ def train_and_eval(**params) -> float:
         weight_decay=0.01,
         metric_for_best_model="accuracy" if params["task"] not in ["stsb", "cola"] else "matthews_correlation" if params["task"] == "cola" else "pearson",
         # gradient_accumulation_steps=grad_accum_steps,
+        optim="paged_adamw_8bit",
     )
 
     def safe_corr(x, y, corr_fn):
