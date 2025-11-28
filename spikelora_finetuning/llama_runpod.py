@@ -145,7 +145,7 @@ def train_and_eval(**params) -> float:
     import torch
     from transformers import BitsAndBytesConfig
 
-    config = BitsAndBytesConfig(
+    bnb_config = BitsAndBytesConfig(
         load_in_4bit=True,
         bnb_4bit_quant_type="nf4",
         bnb_4bit_use_double_quant=True,
@@ -159,9 +159,11 @@ def train_and_eval(**params) -> float:
         problem_type="regression" if params["task"] == "stsb" else None,
         trust_remote_code=True,
         ignore_mismatched_sizes=True,
-        quantization_config=config,
+        quantization_config=bnb_config,
         device_map="auto",
-    ).to(device)
+    )
+
+    model.config.use_cache = False  # disable cache for quantization
 
     from peft import prepare_model_for_kbit_training
 
