@@ -151,10 +151,11 @@ def train_and_eval(**params) -> float:
 
     bnb_config = BitsAndBytesConfig(
         load_in_4bit=True,
-        # bnb_4bit_quant_type="nf4",
-        bnb_4bit_quant_type="fp4",
+        bnb_4bit_compute_dtype=(
+            torch.bfloat16 if torch.cuda.is_available() and torch.cuda.is_bf16_supported() else torch.float16
+        ),
         bnb_4bit_use_double_quant=True,
-        bnb_4bit_compute_dtype=torch.bfloat16
+        bnb_4bit_quant_type="nf4",
     )
 
     model = AutoModelForSequenceClassification.from_pretrained(
@@ -169,6 +170,9 @@ def train_and_eval(**params) -> float:
     )
 
     model.config.use_cache = False  # disable cache for quantization
+    
+    from peft import prepare_model_for_kbit_training
+    model = prepare_model_for_kbit_training(model, use_gradient_checkpointing=True)
 
     # Apply SpikeLoRA
     lora_config = LoraConfig(
@@ -185,8 +189,6 @@ def train_and_eval(**params) -> float:
   
     model = get_peft_model(model, lora_config)
     
-    from peft import prepare_model_for_kbit_training
-    model = prepare_model_for_kbit_training(model)
 
     # print model type and number of trainable params
     model.print_trainable_parameters()
