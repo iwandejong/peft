@@ -145,6 +145,21 @@ def train_and_eval(**params) -> float:
         ignore_mismatched_sizes=True,
     ).to(device)
 
+    # prepare for quantization
+    import torch
+    from transformers import BitsAndBytesConfig
+
+    config = BitsAndBytesConfig(
+        load_in_4bit=True,
+        bnb_4bit_quant_type="nf4",
+        bnb_4bit_use_double_quant=True,
+        bnb_4bit_compute_dtype=torch.bfloat16,
+    )
+
+    from peft import prepare_model_for_kbit_training
+
+    model = prepare_model_for_kbit_training(model)
+
     # Apply SpikeLoRA
     config = None
     if params["lora"]:
