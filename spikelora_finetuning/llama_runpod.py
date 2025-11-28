@@ -339,8 +339,7 @@ if __name__ == "__main__":
     params["v_threshold"] = BEST_PARAMS[params["task"]]["v_threshold"]
     params["learning_rate"] = args.lr if args.lr is not None else BEST_PARAMS[params["task"]]["learning_rate"]
     params["batch_size"] = BEST_PARAMS[params["task"]]["batch_size"]
-    # params["num_epochs"] = BEST_PARAMS[params["task"]]["num_epochs"]
-    params["num_epochs"] = 2
+    params["num_epochs"] = BEST_PARAMS[params["task"]]["num_epochs"]
 
     # Setup seeds
     seeds = [args.seed] if args.seed is not None else [1,2,3,4,5]
