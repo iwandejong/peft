@@ -106,6 +106,9 @@ def train_and_eval(**params) -> float:
     # tokenizer = DebertaV2Tokenizer.from_pretrained(f"{PATH}/deberta_v3")
     tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME, use_fast=True)
 
+    if tokenizer.pad_token is None:
+        tokenizer.pad_token = tokenizer.eos_token
+
     val_split = get_validation_split(dataset)
     train_ds = dataset["train"]
     val_ds = dataset[val_split]
