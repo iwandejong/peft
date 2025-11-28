@@ -52,8 +52,8 @@ def get_metric_fn(task):
 
 # MODEL_NAME = "./deberta_v3"
 # MODEL_NAME = "microsoft/deberta-v3-base"
-# MODEL_NAME = "meta-llama/Llama-2-7b-hf"
-MODEL_NAME = "google/gemma-3-1b-it"
+MODEL_NAME = "meta-llama/Llama-2-7b-hf"
+# MODEL_NAME = "google/gemma-3-1b-it"
 # PATH = "/mnt/lustre/users/idejong/peft"
 
 # helper: pick validation split (handles mnli etc.)
@@ -148,7 +148,8 @@ def train_and_eval(**params) -> float:
 
     bnb_config = BitsAndBytesConfig(
         load_in_4bit=True,
-        bnb_4bit_quant_type="nf4",
+        # bnb_4bit_quant_type="nf4",
+        bnb_4bit_quant_type="fp4",
         bnb_4bit_use_double_quant=True,
         bnb_4bit_compute_dtype=torch.bfloat16,
     )
