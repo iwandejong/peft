@@ -63,7 +63,7 @@ with torch.no_grad():
     for batch_texts in batchify(val_texts, BATCH_SIZE):
         inputs = tokenizer(batch_texts, padding=True, truncation=True, max_length=256, return_tensors="pt")
         if "pad_token_id" not in inputs: inputs["pad_token_id"] = tokenizer.pad_token_id
-        inputs = {k: v.to(DEVICE) for k, v in inputs.items()}
+        inputs = {k: (v.to(DEVICE) if torch.is_tensor(v) else v) for k, v in inputs.items()}
         outputs = model(**inputs)
         preds = torch.argmax(outputs.logits, dim=-1)
         all_preds.extend(preds.cpu().numpy())
