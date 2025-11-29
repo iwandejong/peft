@@ -19,6 +19,9 @@ val_labels = dataset["validation"]["label"]
 # --- Load tokenizer ---
 tokenizer = AutoTokenizer.from_pretrained(BASE_MODEL, use_fast=True)
 
+if tokenizer.pad_token is None:
+        tokenizer.pad_token = tokenizer.eos_token
+
 # --- Prepare 4-bit quant config ---
 bnb_config = BitsAndBytesConfig(
     load_in_4bit=True,
