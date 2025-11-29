@@ -41,6 +41,9 @@ model = AutoModelForSequenceClassification.from_pretrained(
 
 # --- Load SpikeLoRA adapter ---
 model = PeftModel.from_pretrained(model, ADAPTER_MODEL)
+
+print(model) # to verify that SpikeLoRA weights are loaded
+
 model.eval()
 model.to(DEVICE)
 
