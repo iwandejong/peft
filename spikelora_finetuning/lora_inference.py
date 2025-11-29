@@ -38,6 +38,10 @@ model = AutoModelForSequenceClassification.from_pretrained(
 
 # --- Load SpikeLoRA adapter ---
 model = PeftModel.from_pretrained(model, ADAPTER_MODEL)
+
+# merge LoRA weights into base model for inference
+model = model.merge_and_unload()
+
 model.eval()
 model.to(DEVICE)
 
