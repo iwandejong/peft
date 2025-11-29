@@ -9,7 +9,7 @@ import numpy as np
 BASE_MODEL = "meta-llama/Llama-2-7b-hf"
 ADAPTER_MODEL = "iwandejong/llama-spikelora"
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
-BATCH_SIZE = 8  # adjust to GPU memory
+BATCH_SIZE = 8
 
 # --- Load CoLA dataset ---
 dataset = load_dataset("glue", "cola")
