@@ -17,10 +17,10 @@ val_texts = dataset["validation"]["sentence"]
 val_labels = dataset["validation"]["label"]
 
 # --- Load tokenizer ---
-tokenizer = AutoTokenizer.from_pretrained(BASE_MODEL, use_fast=True, pad_token="<pad>", truncation_side="right")
+tokenizer = AutoTokenizer.from_pretrained(BASE_MODEL, use_fast=True)
 
 if tokenizer.pad_token is None:
-        tokenizer.pad_token = tokenizer.eos_token
+    tokenizer.pad_token = tokenizer.eos_token
 
 # --- Prepare 4-bit quant config ---
 bnb_config = BitsAndBytesConfig(
@@ -62,6 +62,7 @@ start_total = time.time()
 with torch.no_grad():
     for batch_texts in batchify(val_texts, BATCH_SIZE):
         inputs = tokenizer(batch_texts, padding=True, truncation=True, max_length=256, return_tensors="pt")
+        if "pad_token_id" not in inputs: inputs["pad_token_id"] = tokenizer.pad_token_id
         inputs = {k: (v.to(DEVICE) if torch.is_tensor(v) else v) for k, v in inputs.items()}
         outputs = model(**inputs)
         preds = torch.argmax(outputs.logits, dim=-1)
