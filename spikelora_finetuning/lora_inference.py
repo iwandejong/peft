@@ -21,6 +21,7 @@ tokenizer = AutoTokenizer.from_pretrained(BASE_MODEL, use_fast=True)
 
 if tokenizer.pad_token is None:
     tokenizer.pad_token = tokenizer.eos_token
+tokenizer.pad_token_id = tokenizer.convert_tokens_to_ids(tokenizer.pad_token)
 
 # --- Prepare 4-bit quant config ---
 bnb_config = BitsAndBytesConfig(
@@ -38,6 +39,7 @@ model = AutoModelForSequenceClassification.from_pretrained(
     quantization_config=bnb_config,
     trust_remote_code=True,
 )
+model.config.pad_token_id = tokenizer.pad_token_id
 
 # --- Load SpikeLoRA adapter ---
 model = PeftModel.from_pretrained(model, ADAPTER_MODEL)
