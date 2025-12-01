@@ -46,6 +46,7 @@ model = PeftModel.from_pretrained(model, ADAPTER_MODEL)
 
 print(model) # to verify that SpikeLoRA weights are loaded
 
+model.requires_grad_(False)
 model.eval()
 model.to(DEVICE)
 

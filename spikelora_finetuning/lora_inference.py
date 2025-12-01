@@ -49,6 +49,7 @@ model = model.merge_and_unload()
 
 print(model) # to verify that LoRA weights are merged
 
+model.requires_grad_(False)
 model.eval()
 model.to(DEVICE)
 
